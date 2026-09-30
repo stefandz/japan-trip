@@ -4,6 +4,12 @@ import { parseTrip, hash } from './parse.js';
 import { createSync } from './sync.js';
 import { nowInstant, wallClock, fmtMinutes, daysBetween } from './time.js';
 import { earlyStart, icsHref } from './ics.js';
+import { unlock } from './unlock.js';
+import { esc, progress, shortDate } from './util.js';
+import { refreshRate, refreshWeather, weather, wxEmoji } from './live.js';
+import { cityFor } from './content.js';
+import * as kit from './kit.js';
+import { tripMap } from './map.js';
 
 const app = document.getElementById('app');
 const nav = document.getElementById('tabs');
@@ -16,28 +22,19 @@ let syncState = { marks: {}, stamps: {}, choices: {} };
 // ---------- boot ----------
 
 async function boot() {
+  Object.assign(CONFIG, await unlock(app));
   const cached = cachedTabs();
   if (cached) useTabs(cached);
-  sync = await createSync(s => { syncState = s; render(); }).catch(err => {
-    console.error(err);
-    meta.syncError = 'Live sync unavailable — marks are saved on this phone only.';
-    return createLocalFallback();
-  });
+  sync = await createSync(s => { syncState = s; render(); });
+  meta.syncError = sync.error;
   syncState = sync.state;
   render();
   refresh();
   document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') refresh(); });
   window.addEventListener('hashchange', () => render({ fresh: true }));
   setInterval(() => { if (route().name === 'now') render(); }, 60000);
+  window.addEventListener('online', () => refresh(true));
   if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js');
-}
-
-async function createLocalFallback() {
-  const saved = CONFIG.FIREBASE;
-  CONFIG.FIREBASE = null;
-  const s = await createSync(st => { syncState = st; render(); });
-  CONFIG.FIREBASE = saved;
-  return s;
 }
 
 let lastFetch = 0;
@@ -46,6 +43,8 @@ async function refresh(force = false) {
   lastFetch = Date.now();
   const before = JSON.stringify([lastTabsJSON, meta.error, meta.parseError]);
   meta.loading = true;
+  // Rate and weather are nice-to-haves: refresh quietly, keep the cached copy on failure.
+  Promise.allSettled([refreshRate(), refreshWeather()]).then(rs => { if (rs.some(r => r.value)) render(); });
   try {
     useTabs(await fetchTabs());
     meta.error = null;
@@ -106,9 +105,10 @@ let lastViewKey = null;
 
 function render({ fresh = false } = {}) {
   const r = route();
-  nav.querySelectorAll('a').forEach(a => a.classList.toggle('on', a.dataset.tab === (r.name === 'day' ? 'days' : r.name)));
+  const tab = r.name === 'day' ? 'days' : kit.KIT_ROUTES.includes(r.name) ? 'kit' : r.name;
+  nav.querySelectorAll('a').forEach(a => a.classList.toggle('on', a.dataset.tab === tab));
 
-  if (!trip) {
+  if (!trip && !['kit', 'phrases', 'yen', 'sos', 'howto'].includes(r.name)) {
     app.innerHTML = meta.parseError || meta.error
       ? `<div class="empty"><div class="big">🙈</div><p>${esc(meta.parseError || meta.error)}</p>
          <button class="btn" data-action="refresh">Try again</button></div>`
@@ -121,14 +121,27 @@ function render({ fresh = false } = {}) {
   if (viewKey !== lastViewKey) fresh = true;
   lastViewKey = viewKey;
   const keep = fresh ? null : snapshotScroll();
-  const views = { now: viewNow, days: viewDays, day: viewDay, stamps: viewStamps, prep: viewPrep };
+  const c = ctx();
+  const views = {
+    now: viewNow, days: viewDays, day: viewDay, stamps: viewStamps, prep: viewPrep,
+    kit: () => kit.viewKit(c), phrases: kit.viewPhrases, yen: kit.viewYen, taxi: () => kit.viewTaxi(c),
+    sos: () => kit.viewSos(c), spend: () => kit.viewSpend(c), food: () => kit.viewFood(c), howto: kit.viewHowto,
+  };
+  const fields = fresh ? null : snapshotFields();
   app.innerHTML = banner() + (views[r.name] || viewNow)(r);
+  if (fields) restoreFields(fields);
   if (keep) restoreScroll(keep);
   else {
     window.scrollTo(0, 0);
     if (r.name === 'day') focusCard(r.b || todaysCardId(r.a), false);
   }
   if (r.name === 'day') watchCarousel();
+}
+
+function ctx() {
+  const where = trip ? whereAreWe() : {};
+  const today = where.day?.date || wallClock(nowInstant(), 'Asia/Tokyo').date;
+  return { trip, state: syncState, sync, where, today };
 }
 
 // Opening today's day view without a card lands on the current one.
@@ -141,7 +154,7 @@ function todaysCardId(dayNum) {
 function banner() {
   const bits = [];
   if (meta.parseError) bits.push(`⚠️ ${esc(meta.parseError)} — showing the last good copy.`);
-  else if (meta.error) bits.push(`📴 Couldn't reach the Sheet (${esc(meta.error)}). Showing the copy from ${ago(meta.fetchedAt)}.`);
+  else if (meta.error) bits.push(`📴 Couldn't reach the Sheet (${esc(meta.error)}). ${meta.fetchedAt ? `Showing the copy from ${ago(meta.fetchedAt)}.` : 'No saved copy on this phone yet.'}`);
   if (meta.syncError) bits.push(`🔌 ${esc(meta.syncError)}`);
   return bits.map(b => `<div class="notice">${b}</div>`).join('');
 }
@@ -158,18 +171,31 @@ function viewNow() {
   const tomorrowEarly = nextDay && earlyStart(nextDay);
   const lateEnough = minutes >= 15 * 60;
 
+  const celebrate = isAnniv(day);
   return `
-    <header class="hero">
-      <div class="kicker">Day ${day.day} · ${esc(day.label)}</div>
-      <h1>${esc(day.base || 'Today')}</h1>
-      <div class="clock">${fmtMinutes(minutes)} <small>${day.tz === 'Asia/Tokyo' ? 'JST' : 'UK'}</small></div>
+    <header class="hero ${celebrate ? 'anniv' : ''}">
+      ${celebrate ? `<div class="hearts" aria-hidden="true">♥ ♥ ♥</div>
+        <div class="kicker">${esc(anniv().names)} · ${plural(annivYears(day), 'year')} since we met</div>
+        <h1>Happy anniversary</h1>
+        <div class="muted">Day ${day.day} · ${esc(day.label)} · ${esc(day.base)}</div>`
+      : `<div class="kicker">Day ${day.day} · ${esc(day.label)}</div>
+      <h1>${esc(day.base || 'Today')}</h1>`}
+      <div class="clock">${fmtMinutes(minutes)} <small>${day.tz === 'Asia/Tokyo' ? 'JST' : 'UK'}</small>${wxChip(day)}</div>
       ${progress(done, day.cards.length)}
     </header>
+    <nav class="quick">
+      <a class="chip" href="#/taxi">🚕 Taxi card</a><a class="chip" href="#/phrases">🗣️ Phrases</a>
+      <a class="chip" href="#/yen">💴 Yen</a><a class="chip" href="#/spend">🧾 Spend</a><a class="chip" href="#/sos">🆘 SOS</a>
+    </nav>
     ${tomorrowEarly && lateEnough ? earlyBanner(nextDay, tomorrowEarly, 'Tomorrow') : ''}
+    ${nextDay && lateEnough ? wxWarning(nextDay) : ''}
+    ${isAnniv(nextDay) && lateEnough ? `<aside class="anniv-banner"><div class="big">♥</div><div><b>Tomorrow: our anniversary</b>
+      <div>${plural(annivYears(nextDay), 'year')} of ${esc(anniv().names)}</div></div></aside>` : ''}
     ${current ? `<h2 class="section">Now</h2>${card(current, day, { hero: true })}` : ''}
     ${next ? `<h2 class="section">Up next ${next.start != null ? `<span class="muted">· ${fmtMinutes(next.start)}${countdownTo(next.start - minutes)}</span>` : ''}</h2>${card(next, day)}` : `<div class="empty small">🎉 Nothing left on today's list.</div>`}
     <a class="btn wide ghost" href="#/day/${day.day}/${(current || next || day.cards[0])?.id || ''}">See all of Day ${day.day} →</a>
     ${overnight(day)}
+    <a class="mapcard" href="#/days">${tripMap(trip, { today: day, variant: 'compact' })}</a>
   `;
 }
 
@@ -183,6 +209,7 @@ function viewBefore(w) {
       <div class="kicker">${esc(first.label)} → ${esc(trip.days[trip.days.length - 1].label)}</div>
       <div class="giant">${n}</div>
       <h1>${n === 1 ? 'sleep' : 'sleeps'} till Japan</h1>
+      ${annivDay() ? `<p class="anniv-line">…and ${plural(daysBetween(today, annivDay().date), 'sleep')} till our anniversary ♥</p>` : ''}
       <div class="train" aria-hidden="true">🚅💨</div>
     </header>
     ${earlyStart(first) ? earlyBanner(first, earlyStart(first), 'Departure day') : ''}
@@ -191,6 +218,8 @@ function viewBefore(w) {
     ${todo.length > 6 ? `<a class="btn wide ghost" href="#/prep">All ${todo.length} tasks →</a>` : ''}
     <h2 class="section">First up</h2>
     ${first.cards[0] ? card(first.cards[0], first) : ''}
+    <h2 class="section">The route</h2>
+    <a class="mapcard" href="#/days">${tripMap(trip, { variant: 'compact' })}</a>
     <a class="btn wide ghost" href="#/days">Browse all ${trip.days.length} days →</a>
   `;
 }
@@ -210,8 +239,18 @@ function viewAfter() {
       <div><b>${stamps}</b><span>eki stamps</span></div>
       <div><b>${trip.legs.length}</b><span>trains &amp; flights</span></div>
     </div>
+    ${journalList()}
     <a class="btn wide ghost" href="#/days">Relive it day by day →</a>
   `;
+}
+
+function journalList() {
+  const days = trip.days.filter(d => syncState.journal[d.date]);
+  if (!days.length) return '';
+  return `<h2 class="section">Journal</h2><ul class="tasks">${days.map(d => {
+    const j = syncState.journal[d.date];
+    return `<li class="task"><span class="cat">Day ${d.day} · ${esc(d.base)}</span><b>${j.mood || ''} ${esc(j.text || '')}</b></li>`;
+  }).join('')}</ul>`;
 }
 
 // ----- Trip overview -----
@@ -220,6 +259,7 @@ function viewDays() {
   const w = whereAreWe();
   return `
     <header class="page"><h1>The trip</h1><p class="muted">${trip.days.length} days · tap one to dive in</p></header>
+    ${tripMap(trip, { today: w.phase === 'during' ? w.day : null })}
     <ol class="daylist">
       ${trip.days.map(d => {
         const done = d.cards.filter(c => syncState.marks[c.id]).length;
@@ -227,9 +267,9 @@ function viewDays() {
         return `<li><a href="#/day/${d.day}" class="dayrow ${isToday ? 'today' : ''} ${done && done === d.cards.length ? 'complete' : ''}">
           <div class="daynum"><small>Day</small>${d.day}</div>
           <div class="daybody">
-            <div class="dayhead"><b>${esc(d.base)}</b> <span class="muted">${esc(d.label)}</span>${isToday ? ' <span class="pill now">today</span>' : ''}</div>
+            <div class="dayhead"><b>${esc(d.base)}</b> <span class="muted">${esc(d.label)}</span>${isToday ? ' <span class="pill now">today</span>' : ''}${isAnniv(d) ? ' <span class="pill anniv">♥ anniversary</span>' : ''}</div>
             <div class="headline">${esc(d.headline)}</div>
-            <div class="daymeta">${intensity(d.intensity)}<span>🛏️ ${esc(d.stay?.name || d.overnightText || '—')}</span></div>
+            <div class="daymeta">${intensity(d.intensity)}${wxChip(d)}${syncState.journal[d.date]?.mood ? `<span>${syncState.journal[d.date].mood}</span>` : ''}<span>🛏️ ${esc(d.stay?.name || d.overnightText || '—')}</span></div>
           </div></a></li>`;
       }).join('')}
     </ol>`;
@@ -246,8 +286,9 @@ function viewDay(r) {
     <header class="page day">
       <div class="kicker">Day ${day.day} · ${esc(day.label)}</div>
       <h1>${esc(day.base)}</h1>
-      <div class="daymeta">${intensity(day.intensity)}${day.dayNotes ? `<span>${esc(day.dayNotes)}</span>` : ''}</div>
+      <div class="daymeta">${intensity(day.intensity)}${wxChip(day, true)}${day.dayNotes ? `<span>${esc(day.dayNotes)}</span>` : ''}</div>
     </header>
+    ${annivBanner(day)}
     ${early ? earlyBanner(day, early, 'Early start') : ''}
     ${day.decisions.map(decision).join('')}
     <div class="deckbar">
@@ -265,6 +306,8 @@ function viewDay(r) {
         ${syncState.marks[c.id] === 'done' ? '<span class="tick">済</span>' : ''}</button></li>`).join('')}
     </ol>
     ${overnight(day)}
+    ${tripMap(trip, { today: w.phase === 'during' ? w.day : null, focus: day, variant: 'day' })}
+    ${w.phase !== 'before' ? kit.journalBlock(day, syncState) : ''}
     ${w.phase === 'during' ? `<div class="fab-space"></div><a class="fab" href="#/now" aria-label="Jump to now">⏱ Now</a>` : ''}
   `;
 }
@@ -273,7 +316,7 @@ function dayStrip(active, w) {
   return `<nav class="strip" id="strip">${trip.days.map(d => {
     const today = w.phase === 'during' && w.day === d;
     const complete = d.cards.length && d.cards.every(c => syncState.marks[c.id]);
-    return `<a href="#/day/${d.day}" class="${d === active ? 'on' : ''} ${today ? 'today' : ''} ${complete ? 'complete' : ''}">
+    return `<a href="#/day/${d.day}" class="${d === active ? 'on' : ''} ${today ? 'today' : ''} ${complete ? 'complete' : ''} ${isAnniv(d) ? 'anniv' : ''}">
       <small>${esc(d.label.split(' ')[0] || '')}</small><b>${d.day}</b></a>`;
   }).join('')}</nav>`;
 }
@@ -347,7 +390,7 @@ function overnight(day) {
       ${stay ? `<div class="muted">${esc(stay.city)} · night ${daysBetween(stay.checkIn, day.date) + 1} of ${stay.nights ?? '?'}</div>` : ''}
       ${stay?.confirmation ? `<div class="muted">Ref ${esc(stay.confirmation)}</div>` : ''}
     </div>
-    ${stay ? `<a class="chip nav" target="_blank" rel="noopener" href="https://www.google.com/maps/search/?api=1&query=${q}">🗺️</a>` : ''}
+    ${stay ? `<span class="chips"><a class="chip" href="#/taxi" aria-label="Taxi card">🚕</a><a class="chip nav" target="_blank" rel="noopener" href="https://www.google.com/maps/search/?api=1&query=${q}">🗺️</a></span>` : ''}
   </aside>`;
 }
 
@@ -414,7 +457,8 @@ function viewPrep() {
     <details class="done-tasks"><summary>${done.length} done</summary><ul class="tasks">${done.map(t => taskRow(t, today)).join('')}</ul></details>
     <section class="about">
       <div>📄 Plan from Google Sheet · ${meta.fetchedAt ? `updated ${ago(meta.fetchedAt)}` : 'not loaded'} ${meta.loading ? '· refreshing…' : ''}</div>
-      <div>${sync?.mode === 'firebase' ? `🔗 Live sync ${sync.online ? 'connected' : 'offline — will catch up'}` : '📱 Marks saved on this phone only (Firebase not set up)'}</div>
+      <div>${sync?.mode === 'firebase' ? `🔗 Live sync ${sync.online ? 'connected' : 'offline — will catch up'}` : CONFIG.FIREBASE ? '🔌 Live sync not loaded — changes kept on this phone' : '📱 Marks saved on this phone only (Firebase not set up)'}${sync?.pending ? ` · ${sync.pending} change${sync.pending === 1 ? '' : 's'} waiting to sync` : ''}</div>
+      <div>🌦️ Weather ${weather().fetchedAt ? `updated ${ago(weather().fetchedAt)}` : 'not loaded yet'}</div>
       <button class="btn ghost" data-action="refresh">↻ Reload plan</button>
     </section>`;
 }
@@ -432,9 +476,42 @@ function taskRow(t, today = wallClock(nowInstant(), 'Europe/London').date) {
 
 // ---------- small helpers ----------
 
-function progress(n, total) {
-  const pct = total ? Math.round((n / total) * 100) : 0;
-  return `<div class="progress" role="progressbar" aria-valuenow="${pct}" aria-valuemin="0" aria-valuemax="100"><i style="width:${pct}%"></i></div>`;
+// Anniversary (from the encrypted secrets: { date: 'MM-DD', since: YYYY, names }).
+const anniv = () => CONFIG.ANNIVERSARY;
+const isAnniv = day => !!anniv() && day?.date?.slice(5) === anniv().date;
+const annivDay = () => trip.days.find(isAnniv) || null;
+const annivYears = day => Number(day.date.slice(0, 4)) - anniv().since;
+const plural = (n, word) => `${n} ${word}${n === 1 ? '' : 's'}`;
+
+function annivBanner(day) {
+  if (!isAnniv(day)) return '';
+  return `<aside class="anniv-banner"><div class="big">♥</div>
+    <div><b>${esc(anniv().names)}</b><div>${plural(annivYears(day), 'year')} since we met</div></div></aside>`;
+}
+
+// Forecast for a day's base city (open-meteo covers ~16 days ahead; past days keep their last forecast).
+function wxFor(day) {
+  const city = cityFor(day.base) || cityFor(day.stay?.city) || cityFor(day.overnightText);
+  return city ? { city, ...weather().byCity[city]?.[day.date] } : null;
+}
+
+function wxChip(day, long = false) {
+  const w = wxFor(day);
+  if (w?.code == null) return '';
+  const rain = w.rain >= 30 ? ` · ☔ ${w.rain}%` : '';
+  const gust = long && w.gust >= 40 ? ` · 💨 ${w.gust} km/h` : '';
+  return `<span class="wx">${wxEmoji(w.code)} ${w.max}°/${w.min}°${rain}${gust}</span>`;
+}
+
+function wxWarning(day) {
+  const w = wxFor(day);
+  if (w?.code == null) return '';
+  const bits = [];
+  if (w.rain >= 70) bits.push(`${w.rain}% chance of rain — take umbrellas`);
+  if (w.gust >= 60) bits.push(`gusts up to ${w.gust} km/h — check trains are running`);
+  if (!bits.length) return '';
+  return `<aside class="early"><div class="big">${w.gust >= 60 ? '🌀' : '☔'}</div>
+    <div><b>Tomorrow in ${esc(w.city)}</b><div class="muted">${bits.join('; ')}</div></div></aside>`;
 }
 
 function intensity(n) {
@@ -445,7 +522,6 @@ function intensity(n) {
 const markClass = c => syncState.marks[c.id] || '';
 const typeHue = key => ({ travel: 215, food: 18, 'free time': 150, sight: 280, nightlife: 320, experience: 45 }[key] ?? parseInt(hash(key), 36) % 360);
 const countdownTo = m => m > 0 ? ` · in ${m >= 60 ? `${Math.floor(m / 60)}h ${m % 60}m` : `${m}m`}` : '';
-const shortDate = iso => new Date(iso + 'T12:00:00Z').toLocaleDateString('en-GB', { day: 'numeric', month: 'short', timeZone: 'UTC' });
 
 function ago(iso) {
   if (!iso) return 'never';
@@ -454,10 +530,6 @@ function ago(iso) {
   if (mins < 60) return `${mins} min ago`;
   if (mins < 1440) return `${Math.round(mins / 60)}h ago`;
   return `${Math.round(mins / 1440)}d ago`;
-}
-
-function esc(s) {
-  return String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 }
 
 function linkify(s) {
@@ -493,6 +565,25 @@ function watchCarousel() {
     }
   }, { root: deck, threshold: 0.6 });
   slides.forEach(s => io.observe(s));
+}
+
+// Re-renders (sync updates from the other phone) mustn't eat what's being typed.
+function snapshotFields() {
+  const active = document.activeElement;
+  return {
+    values: [...app.querySelectorAll('input[id], textarea[id]')].map(el => [el.id, el.value]),
+    focus: active?.id && app.contains(active) ? { id: active.id, start: active.selectionStart, end: active.selectionEnd } : null,
+  };
+}
+
+function restoreFields({ values, focus }) {
+  for (const [id, v] of values) {
+    const el = document.getElementById(id);
+    // Journal text is shared state: take the other phone's version unless it's the field being typed in.
+    if (el && (!el.dataset.journal || focus?.id === id)) el.value = v;
+  }
+  const el = focus && document.getElementById(focus.id);
+  if (el) { el.focus({ preventScroll: true }); try { el.setSelectionRange(focus.start, focus.end); } catch {} }
 }
 
 function snapshotScroll() {
@@ -533,8 +624,14 @@ document.addEventListener('click', e => {
     focusCard(target.dataset.id);
   } else if (action === 'copy') {
     navigator.clipboard?.writeText(btn.dataset.text).then(() => toast('Copied'));
+  } else if (kit.kitClick(action, btn, ctx())) {
+    buzz();
   }
 });
+
+document.addEventListener('input', kit.kitInput);
+document.addEventListener('change', e => kit.kitChange(e, ctx()));
+document.addEventListener('submit', e => { if (app.contains(e.target) && sync) kit.kitSubmit(e, ctx()); });
 
 function buzz() { navigator.vibrate?.(30); }
 

@@ -1,25 +1,13 @@
 // Everything you need to edit to point the app at real data lives here.
 export const CONFIG = {
-  // The "Japan Trip Plan" Google Sheet. Share it as "anyone with the link can view".
-  SHEET_ID: '1XR6_hU27-w2tCDTQFXbN4pmR7wllrdoQMMEXP3U4lYU',
-
-  // Google Cloud API key restricted to the Sheets API + your hosting domain.
-  // Leave empty to fall back to the public gviz CSV endpoint (no key needed,
-  // but still requires link-sharing).
-  SHEETS_API_KEY: '',
-
-  // Firebase Realtime Database config (Project settings → Your apps → Web app).
-  // Leave null to keep done/skip/stamp marks on this device only.
-  FIREBASE: null,
-  // FIREBASE: {
-  //   apiKey: '...',
-  //   authDomain: 'your-project.firebaseapp.com',
-  //   databaseURL: 'https://your-project-default-rtdb.europe-west1.firebasedatabase.app',
-  //   projectId: 'your-project',
-  // },
-
-  // Shared document both phones read/write. Make it hard to guess.
-  TRIP_DOC_ID: 'japan-2026-change-me',
+  // SHEET_ID, SHEETS_API_KEY, FIREBASE and TRIP_DOC_ID are NOT here: they're
+  // encrypted in secrets.enc.js and merged in once the phone is unlocked.
+  // Edit secrets.json (gitignored) and run tools/seal.py. Shape:
+  //   SHEET_ID:       the "Japan Trip Plan" Sheet, shared as "anyone with the link can view"
+  //   SHEET_SCRIPT_URL / SHEET_SCRIPT_TOKEN: the Apps Script that reads the private Sheet (tools/sheet-proxy.gs)
+  //   SHEETS_API_KEY: optional, link-shared Sheets only; '' falls back to the public gviz CSV endpoint
+  //   FIREBASE:       optional Realtime Database web config; null = marks stay on each phone
+  //   TRIP_DOC_ID:    shared document both phones read/write
 
   TRIP_YEAR: 2026,
   TRIP_START: '2026-10-07',

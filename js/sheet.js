@@ -10,6 +10,7 @@ export async function fetchTabs() {
   const override = new URLSearchParams(location.search).get('data');
   let tabs;
   if (override) tabs = fromBatchGet(await getJSON(override));
+  else if (CONFIG.SHEET_SCRIPT_URL) tabs = await viaScript();
   else if (CONFIG.SHEETS_API_KEY) tabs = await viaSheetsApi();
   else tabs = await viaGviz();
   const fetchedAt = new Date().toISOString();
@@ -22,6 +23,19 @@ export function cachedTabs() {
     const hit = JSON.parse(localStorage.getItem(CACHE_KEY));
     return hit ? { ...hit, fromCache: true } : null;
   } catch { return null; }
+}
+
+// Private Sheet: an Apps Script web app (tools/sheet-proxy.gs) reads it as the owner.
+async function viaScript() {
+  const url = `${CONFIG.SHEET_SCRIPT_URL}?token=${encodeURIComponent(CONFIG.SHEET_SCRIPT_TOKEN || '')}&tabs=${encodeURIComponent(TABS.join(','))}`;
+  const unreachable = `Can't reach the Sheet script — is it deployed with access for "Anyone"?`;
+  // A deployment that needs a Google login redirects to a sign-in page, which the browser blocks.
+  const res = await fetch(url, { cache: 'no-store' }).catch(() => { throw new Error(navigator.onLine === false ? 'Offline' : unreachable); });
+  if (!res.ok) throw new Error(`${unreachable} (${res.status})`);
+  const json = await res.json();
+  if (json.error === 'forbidden') throw new Error('The Sheet script rejected the token — check TOKEN in the script matches secrets.json.');
+  if (!json.tabs) throw new Error(`Unexpected reply from the Sheet script`);
+  return json.tabs;
 }
 
 async function viaSheetsApi() {

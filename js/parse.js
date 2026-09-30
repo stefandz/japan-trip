@@ -6,7 +6,8 @@ import { tzForDay } from './time.js';
 const COLS = {
   Overview: { date: 'Date', day: 'Day', base: 'Base', overnight: 'Overnight in', headline: 'Headline plan', intensity: 'Intensity (1-5)', notes: 'Notes' },
   Itinerary: { date: 'Date', day: 'Day', slot: 'Time', exact: 'Exact time', activity: 'Activity', location: 'Location', gettingThere: 'Getting there', type: 'Type', status: 'Status', notes: 'Notes' },
-  Accommodation: { city: 'City', checkIn: 'Check-in', checkOut: 'Check-out', nights: 'Nights', name: 'Option(s)', status: 'Status', confirmation: 'Confirmation code', notes: 'Notes' },
+  Accommodation: { city: 'City', checkIn: 'Check-in', checkOut: 'Check-out', nights: 'Nights', name: 'Option(s)', status: 'Status', confirmation: 'Confirmation code', notes: 'Notes',
+    nameJa: 'Name (JP)', addressJa: 'Address (JP)', phone: 'Phone' },
   Travel: { leg: 'Leg', date: 'Date', mode: 'Mode', number: 'Flight/Train No.', departs: 'Sched. departure', arrives: 'Sched. arrival', status: 'Status', confirmation: 'Confirmation code', notes: 'Notes' },
   'Eki Stamps': { station: 'Station', line: 'Line / operator', day: 'Day', design: 'Design / highlight', where: 'Where to find it', status: 'Status' },
   Countdown: { due: 'Due date', task: 'Task', category: 'Category', status: 'Status', notes: 'Notes' },
@@ -15,6 +16,8 @@ const COLS = {
 
 // Optional tabs: the app still works if these are missing.
 const OPTIONAL = new Set(['Overview', 'Countdown', 'Open Decisions', 'Eki Stamps']);
+// Optional columns: extras for the taxi card. Blank when absent, never an error.
+const OPTIONAL_COLS = new Set(['nameJa', 'addressJa', 'phone']);
 
 const SLOT_DEFAULT_MIN = { morning: 8 * 60, afternoon: 13 * 60, evening: 18 * 60, night: 21 * 60 };
 const MONTHS = { jan: 1, feb: 2, mar: 3, apr: 4, may: 5, jun: 6, jul: 7, aug: 8, sep: 9, oct: 10, nov: 11, dec: 12 };
@@ -79,7 +82,7 @@ function records(name, rows) {
   const missing = [];
   for (const [key, label] of Object.entries(COLS[name])) {
     idx[key] = header.indexOf(label.toLowerCase());
-    if (idx[key] < 0) missing.push(label);
+    if (idx[key] < 0 && !OPTIONAL_COLS.has(key)) missing.push(label);
   }
   // Only a problem if a core column is gone; minor columns just come through blank.
   if (missing.length && !OPTIONAL.has(name) && missing.length > 2) {

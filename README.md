@@ -13,22 +13,64 @@ No build step and no dependencies: plain HTML/CSS/ES modules.
 | Day view | Day strip (sticky), swipeable card deck, a timeline to jump around, the overnight banner, and open decisions for that day. ⏱ Now button to jump back. |
 | 🔴 **Stamps** | Eki stamp book. Tap to collect. |
 | 🎒 **Prep** | Countdown tasks with live days-left, open decisions (tap to resolve), stays, and sync/data status. |
+| 🧰 **Kit** | 🗣️ Phrases (search in English, tap for full screen), 💴 Yen converter + reference table, 🚕 Taxi card (hotel in Japanese, full screen), 🆘 SOS numbers + your insurance/medical notes, 🧾 Spend log (shared, ¥ and £), 🍡 Food list (shared, add your own), 📖 How-to cards. |
+
+The Trip tab opens with a route map: each base city in order, trains between them (listed under the map), day trips like Miyajima and Himeji, and a pulsing dot where you are. A compact copy sits on Now, and each day's view highlights that day's move. It's drawn from a built-in simplified coastline (`js/map-data.js`, Natural Earth, public domain), so it works offline. Map positions for cities and day-trip spots are in `js/content.js`.
+
+Also: each day shows its forecast (Trip list, day header, Now), and the evening before a wet or windy day Now shows a warning. Each day view has a shared journal (mood + a line or two), which appears on the おかえり screen afterwards.
+
+### Where things come from
+
+| Feature | Source | Why |
+|---|---|---|
+| Phrases, how-to, SOS numbers, food starter list | Built in (`js/content.js`) | The Japanese needs to be right, and it has to work with no data at all. |
+| Taxi card | Sheet: optional **Name (JP)**, **Address (JP)**, **Phone** columns on Accommodation | Copy them from each booking confirmation. Without them the card shows the English name + a map link. |
+| Insurance, medical notes, contacts | `EMERGENCY` in `secrets.json` (encrypted) | Personal. Kept out of the link-shared Sheet. |
+| Spend, food ticks & additions, journal | Shared state (Firebase, or this phone) | Added on the go, from either phone. |
+| Exchange rate, weather | frankfurter.dev, open-meteo.com (no keys) | Cached. Offline shows the last copy. |
+
+### Offline
+
+The app shell, fonts and Firebase SDK are cached by the service worker. The Sheet, rate and forecasts are cached in localStorage, and so is shared state. Changes made offline go into an outbox that's replayed to Firebase when you're back online, even if the app was closed in between. Prep shows how many changes are waiting. Only map links and live data need a connection.
 
 Travel cards pull the booking from the **Travel** tab. They match on the train/flight number showing up in the itinerary row, or on departure time if not. Car, seats and ref get pulled out of the Notes text. Split legs like "Tsurugi 17 / Thunderbird 18" show the right seats on each train's card.
 
 ## Setup
 
-### 1. Let the app read the Sheet
-Share the Sheet as **Anyone with the link → Viewer**. That alone is enough: with no API key the app uses the public gviz CSV endpoint.
+### 0. The lock
+The site is public, but the Sheet ID and sync config aren't in it. They live in `secrets.json` (gitignored), which `tools/seal.py` encrypts into `secrets.enc.js` (AES-GCM, with a PBKDF2 key made from a passphrase). Without the passphrase, the public files don't show where the plan or the marks live.
 
-Optional, and what the brief suggests: create a Google Cloud API key, restrict it to the **Google Sheets API** and your hosting domain (HTTP referrer), and put it in `config.js` → `SHEETS_API_KEY`. The app then uses `spreadsheets.values.batchGet`.
+```
+pip install cryptography        # once
+python3 tools/seal.py --site https://stefandz.github.io/japan-trip/
+```
+
+Commit `secrets.enc.js`. The script prints a setup link ending `#key=<passphrase>`. Send it privately; opening it unlocks that browser for good. Anyone can also type the passphrase on the lock screen. Re-running `seal.py` with a new passphrase locks every phone out until it's entered again. On iPhone, a Home Screen app keeps storage apart from Safari, so it may ask once more after installing.
+
+`EMERGENCY.people` in `secrets.json` is a list, one entry per person: `name`, `insurance` (`name`, `policy`, `phone`), `medical` (`en` + `ja`, shown full screen on the SOS page) and `contacts`. Blank fields and `(example)` lines are skipped.
+
+`ANNIVERSARY` (`{"date": "MM-DD", "since": YYYY, "names": "…"}`) themes that day: the Now screen, a ♥ in the day strip and Trip list, a banner on the day, a note the evening before, and a countdown line before the trip.
+
+This is only as strong as the passphrase. Anyone who has the Sheet link itself can still read it.
+
+### 1. Let the app read the Sheet
+The Sheet stays **private**. A small Apps Script reads it as you, and only answers requests that carry a secret token.
+
+1. In the Sheet: **Extensions → Apps Script**. Replace the editor contents with `tools/sheet-proxy.gs`.
+2. Set `TOKEN` in the script to the `SHEET_SCRIPT_TOKEN` value from `secrets.json`. Save.
+3. **Deploy → New deployment** → type **Web app**. Execute as **Me**, Who has access **Anyone**. Deploy, and allow the permissions it asks for.
+4. Copy the **Web app URL** (ends in `/exec`) into `secrets.json` → `SHEET_SCRIPT_URL`, then re-run `tools/seal.py`.
+
+"Anyone" only means the URL doesn't need a Google login. Without the token it returns nothing. If you edit the script later, use **Deploy → Manage deployments → edit → New version** so the URL stays the same.
+
+Other ways in, if you ever need them: a link-shared Sheet works with no script (public gviz CSV), or with `SHEETS_API_KEY` set.
 
 ### 2. Two-phone sync (Firebase)
 Until this is set up, done/skip/stamps/decisions are saved **on each phone separately**.
 
 1. [console.firebase.google.com](https://console.firebase.google.com) → new project → **Realtime Database** → create (europe-west1 is fine).
-2. Project settings → Your apps → add a **Web app**, and copy the config into `config.js` → `FIREBASE`.
-3. Change `TRIP_DOC_ID` to something unguessable.
+2. Project settings → Your apps → add a **Web app**, and copy the config into `secrets.json` → `FIREBASE`.
+3. Change `TRIP_DOC_ID` in `secrets.json` to something unguessable, then re-run `tools/seal.py`.
 4. Database → Rules, scoped to just that document:
    ```json
    { "rules": { "trips": { "YOUR_TRIP_DOC_ID": { ".read": true, ".write": true } } } }
