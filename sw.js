@@ -1,6 +1,6 @@
 // Offline shell: cache-first for app files, network for everything else.
 // Plan data is cached separately in localStorage by the app itself.
-const VERSION = 'jt-v2';
+const VERSION = 'jt-v3';
 const SHELL = [
   './', 'index.html', 'styles.css', 'config.js', 'manifest.webmanifest',
   'js/app.js', 'js/sheet.js', 'js/parse.js', 'js/sync.js', 'js/time.js', 'js/ics.js',

@@ -83,7 +83,7 @@ h2.section .muted { text-transform: none; letter-spacing: 0; font-weight: 500; }
 .giant { font-size: 104px; font-weight: 900; line-height: 1; color: var(--shu); letter-spacing: -.04em; font-variant-numeric: tabular-nums; }
 .giant:not(:only-child) { margin-top: 12px; }
 .train { font-size: 34px; animation: zoom 3.2s ease-in-out infinite; display: inline-block; }
-@keyframes zoom { 0% { transform: translateX(-140px); opacity: 0 } 20%, 70% { opacity: 1 } 100% { transform: translateX(140px); opacity: 0 } }
+@keyframes zoom { 0% { transform: translateX(140px); opacity: 0 } 20%, 70% { opacity: 1 } 100% { transform: translateX(-140px); opacity: 0 } }
 
 .page { padding: 8px 4px 4px; }
 .page.day { padding-top: 14px; }
