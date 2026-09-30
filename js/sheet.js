@@ -43,8 +43,10 @@ function fromBatchGet(json) {
 async function viaGviz() {
   const entries = await Promise.all(TABS.map(async t => {
     const url = `https://docs.google.com/spreadsheets/d/${CONFIG.SHEET_ID}/gviz/tq?tqx=out:csv&headers=1&sheet=${encodeURIComponent(t)}`;
-    const res = await fetch(url);
-    if (!res.ok) throw new Error(`Sheet not readable (${res.status}) — is it shared "anyone with the link"?`);
+    const notShared = `Can't read the Sheet — is it shared as "anyone with the link can view"?`;
+    // An unshared Sheet redirects to a Google login page, which the browser blocks outright.
+    const res = await fetch(url).catch(() => { throw new Error(navigator.onLine === false ? 'Offline' : notShared); });
+    if (!res.ok) throw new Error(`${notShared} (${res.status})`);
     return [t, parseCSV(await res.text())];
   }));
   return Object.fromEntries(entries);
