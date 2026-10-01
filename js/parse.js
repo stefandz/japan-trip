@@ -12,10 +12,11 @@ const COLS = {
   'Eki Stamps': { station: 'Station', line: 'Line / operator', day: 'Day', design: 'Design / highlight', where: 'Where to find it', status: 'Status' },
   Countdown: { due: 'Due date', task: 'Task', category: 'Category', status: 'Status', notes: 'Notes' },
   'Open Decisions': { topic: 'Topic', question: 'Open question', options: 'Options', leaning: 'Leaning' },
+  Gifts: { for: 'For', gift: 'Gift', where: 'Where to look', budget: 'Budget', status: 'Status', notes: 'Notes' },
 };
 
 // Optional tabs: the app still works if these are missing.
-const OPTIONAL = new Set(['Overview', 'Countdown', 'Open Decisions', 'Eki Stamps']);
+const OPTIONAL = new Set(['Overview', 'Countdown', 'Open Decisions', 'Eki Stamps', 'Gifts']);
 // Optional columns: extras for the taxi card. Blank when absent, never an error.
 const OPTIONAL_COLS = new Set(['nameJa', 'addressJa', 'phone']);
 
@@ -68,6 +69,9 @@ export function parseTrip(tabs) {
     })),
     countdown: read('Countdown').filter(r => r.task).map(r => ({
       ...r, dueISO: toISO(r.due), done: /done|✅|complete/i.test(r.status || ''),
+    })),
+    gifts: read('Gifts').filter(r => r.gift).map(r => ({
+      ...r, id: hash(`${r.for}|${r.gift}`), sheetBought: /bought|got|done|yes|✅/i.test(r.status || ''),
     })),
   };
 }

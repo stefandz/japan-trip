@@ -62,7 +62,7 @@ export async function createSync(onChange) {
 }
 
 function normalise(v) {
-  return { marks: {}, stamps: {}, choices: {}, spend: {}, food: {}, foodCustom: {}, journal: {}, ...(v || {}) };
+  return { marks: {}, stamps: {}, choices: {}, spend: {}, food: {}, foodCustom: {}, journal: {}, gifts: {}, ...(v || {}) };
 }
 
 const load = () => normalise(loadJSON(LOCAL_KEY));

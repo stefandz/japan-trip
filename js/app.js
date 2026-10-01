@@ -126,7 +126,7 @@ function render({ fresh = false } = {}) {
   const views = {
     now: viewNow, days: viewDays, day: viewDay, stamps: viewStamps, prep: viewPrep,
     kit: () => kit.viewKit(c), phrases: kit.viewPhrases, yen: kit.viewYen, taxi: () => kit.viewTaxi(c),
-    sos: () => kit.viewSos(c), spend: () => kit.viewSpend(c), food: () => kit.viewFood(c), howto: kit.viewHowto,
+    sos: () => kit.viewSos(c), spend: () => kit.viewSpend(c), food: () => kit.viewFood(c), gifts: () => kit.viewGifts(c), howto: kit.viewHowto,
   };
   const fields = fresh ? null : snapshotFields();
   app.innerHTML = banner() + (views[r.name] || viewNow)(r);

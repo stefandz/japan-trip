@@ -1,4 +1,4 @@
-// The 🧰 Kit tab: phrases, yen, taxi card, SOS, spend log, food list, how-to. Plus the day journal.
+// The 🧰 Kit tab: phrases, yen, taxi card, SOS, spend log, food list, gifts, how-to. Plus the day journal.
 // Views take a ctx from app.js: { trip, state, sync, where, today }.
 import { CONFIG } from '../config.js';
 import { PHRASES, SOS_NUMBERS, FOOD, HOWTO, CITIES, cityFor } from './content.js';
@@ -6,7 +6,7 @@ import { rate } from './live.js';
 import { hash } from './parse.js';
 import { esc, progress, shortDate, inkAnim } from './util.js';
 
-export const KIT_ROUTES = ['kit', 'phrases', 'yen', 'taxi', 'sos', 'spend', 'food', 'howto'];
+export const KIT_ROUTES = ['kit', 'phrases', 'yen', 'taxi', 'sos', 'spend', 'food', 'gifts', 'howto'];
 
 const yen = n => '¥' + Math.round(n).toLocaleString('en-GB');
 const gbp = n => '£' + (n < 100 ? n.toFixed(2) : Math.round(n).toLocaleString('en-GB'));
@@ -18,6 +18,7 @@ const back = `<a class="back" href="#/kit">‹ Kit</a>`;
 export function viewKit(ctx) {
   const spent = Object.values(ctx.state.spend).reduce((t, e) => t + e.yen, 0);
   const food = foodItems(ctx.state);
+  const gifts = ctx.trip?.gifts || [];
   const tiles = [
     ['phrases', '🗣️', 'Phrases', `${PHRASES.length} to show or say`],
     ['yen', '💴', 'Yen', `£1 = ¥${rate().jpyPerGbp.toFixed(1)}`],
@@ -25,6 +26,7 @@ export function viewKit(ctx) {
     ['sos', '🆘', 'SOS', '110 · 119 · embassy'],
     ['spend', '🧾', 'Spend', spent ? `${yen(spent)} so far` : 'Log what you spend'],
     ['food', '🍡', 'Food list', `${food.filter(f => ctx.state.food[f.id]).length} / ${food.length} eaten`],
+    ['gifts', '🎁', 'Gifts', gifts.length ? `${gifts.filter(g => giftGot(g, ctx.state)).length} / ${gifts.length} bought` : 'Presents to bring home'],
     ['howto', '📖', 'How-to', 'Onsen, IC cards, manners…'],
   ];
   return `<header class="page"><h1>Kit</h1><p class="muted">Everything here works offline.</p></header>
@@ -198,6 +200,33 @@ export function viewFood(ctx) {
     ${eaten.length ? `<h2 class="section">Eaten</h2><ul class="foodlist">${eaten.map(row).join('')}</ul>` : ''}`;
 }
 
+// ----- gifts (ideas live in the Sheet's Gifts tab; ticks sync like stamps) -----
+
+const giftGot = (g, state) => g.sheetBought || !!state.gifts[g.id];
+
+export function viewGifts(ctx) {
+  const gifts = ctx.trip.gifts;
+  if (!gifts.length) return `${back}<header class="page"><h1>Gifts</h1></header>
+    <div class="empty small">🎁 Nothing on the list yet. Add rows to the Sheet's <b>Gifts</b> tab (For, Gift, Where to look, Budget, Status, Notes).</div>`;
+  const got = gifts.filter(g => giftGot(g, ctx.state)).length;
+  const people = [...new Set(gifts.map(g => g.for || 'Anyone'))];
+  const row = g => {
+    const have = giftGot(g, ctx.state);
+    const bits = [g.where && `🔎 ${g.where}`, g.budget && `💴 ${g.budget}`, g.notes].filter(Boolean).map(esc).join(' · ');
+    return `<li><button class="fooditem ${have ? 'got' : ''}" data-action="gift" data-id="${g.id}">
+      <span class="seal"${have && ctx.state.gifts[g.id] ? inkAnim(ctx.state.gifts[g.id]) : ''}>${have ? '済' : ''}</span>
+      <b>${esc(g.gift)}</b>${bits ? `<small>${bits}</small>` : ''}</button></li>`;
+  };
+  return `${back}<header class="page"><h1>Gifts</h1><p class="muted">${got} of ${gifts.length} bought</p>${progress(got, gifts.length)}</header>
+    ${people.map(p => {
+      const list = gifts.filter(g => (g.for || 'Anyone') === p);
+      const n = list.filter(g => giftGot(g, ctx.state)).length;
+      return `<h2 class="section">${esc(p)} <span class="muted">· ${n} / ${list.length}</span></h2>
+        <ul class="foodlist">${list.map(row).join('')}</ul>`;
+    }).join('')}
+    <p class="tip">✍️ Add ideas in the Sheet's <b>Gifts</b> tab. Ticks here sync to both phones; writing <b>Bought</b> in its Status column also ticks one off.</p>`;
+}
+
 // ----- how-to -----
 
 export function viewHowto() {
@@ -257,6 +286,10 @@ export function kitClick(action, btn, ctx) {
     if (confirm(`Delete ${yen(e.yen)}${e.what ? ` (${e.what})` : ''}?`)) ctx.sync.set(`spend/${id}`, null);
   } else if (action === 'food') {
     ctx.sync.set(`food/${id}`, ctx.state.food[id] ? null : new Date().toISOString());
+  } else if (action === 'gift') {
+    const g = ctx.trip.gifts.find(x => x.id === id);
+    if (g.sheetBought) return true;   // ticked in the Sheet; untick it there
+    ctx.sync.set(`gifts/${id}`, ctx.state.gifts[id] ? null : new Date().toISOString());
   } else if (action === 'food-del') {
     if (confirm('Remove this from the list?')) { ctx.sync.set(`foodCustom/${id}`, null); ctx.sync.set(`food/${id}`, null); }
   } else if (action === 'mood') {
