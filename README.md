@@ -13,7 +13,7 @@ No build step and no dependencies: plain HTML/CSS/ES modules.
 | Day view | Day strip (sticky), swipeable card deck, a timeline to jump around, the overnight banner, and open decisions for that day. ⏱ Now button to jump back. |
 | 🔴 **Stamps** | Eki stamp book. Tap to collect. |
 | 🎒 **Prep** | Countdown tasks with live days-left, open decisions (tap to resolve), stays, and sync/data status. |
-| 🧰 **Kit** | 🗣️ Phrases (search in English, tap for full screen), 💴 Yen converter + reference table, 🚕 Taxi card (hotel in Japanese, full screen), 🆘 SOS numbers + your insurance/medical notes, 🧾 Spend log (shared, ¥ and £), 🍡 Food list (shared, add your own), 📖 How-to cards. |
+| 🧰 **Kit** | 🗣️ Phrases (search in English, tap for full screen; includes vegan / no-dairy ones), 💴 Yen converter + reference table, 🚕 Taxi card (hotel in Japanese, full screen), 🆘 SOS numbers + your insurance/medical notes, 🧾 Spend log (shared, ¥ and £), 🍡 Food list (shared, add your own), 📖 How-to cards. 🎌 National holidays flagged on the day list, day view and Now. |
 
 The Trip tab opens with a route map: each base city in order, trains between them (listed under the map), day trips like Miyajima and Himeji, and a pulsing dot where you are. A compact copy sits on Now, and each day's view highlights that day's move. It's drawn from a built-in simplified coastline (`js/map-data.js`, Natural Earth, public domain), so it works offline. Map positions for cities and day-trip spots are in `js/content.js`.
 
@@ -23,7 +23,7 @@ Also: each day shows its forecast (Trip list, day header, Now), and the evening 
 
 | Feature | Source | Why |
 |---|---|---|
-| Phrases, how-to, SOS numbers, food starter list | Built in (`js/content.js`) | The Japanese needs to be right, and it has to work with no data at all. |
+| Phrases, how-to, SOS numbers, food starter list, national holidays | Built in (`js/content.js`) | The Japanese needs to be right, and it has to work with no data at all. |
 | Taxi card | Sheet: optional **Name (JP)**, **Address (JP)**, **Phone** columns on Accommodation | Copy them from each booking confirmation. Without them the card shows the English name + a map link. |
 | Insurance, medical notes, contacts | `EMERGENCY` in `secrets.json` (encrypted) | Personal. Kept out of the link-shared Sheet. |
 | Spend, food ticks & additions, journal | Shared state (Firebase, or this phone) | Added on the go, from either phone. |

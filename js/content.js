@@ -40,6 +40,22 @@ export const PHRASES = [
   ['Food', 'The bill, please', 'お会計をお願いします', 'okaikei o onegai shimasu'],
   ['Food', 'Can I pay by card?', 'カードで払えますか？', 'kādo de haraemasu ka?'],
 
+  ['Allergy', 'I am allergic to raw bonito tuna. Katsuobushi flakes are OK.', '生のカツオにはアレルギーがあります。かつお節は大丈夫です。', 'nama no katsuo ni wa arerugī ga arimasu. katsuobushi wa daijōbu desu.'],
+
+  ['Vegan', "I'm vegan", 'ヴィーガンです', 'vīgan desu'],
+  ['Vegan', 'No meat, no fish, no dairy', '肉、魚、乳製品は食べられません', 'niku, sakana, nyūseihin wa taberaremasen'],
+  ['Vegan', "I'm vegan: no meat, fish, eggs, dairy or honey", 'ヴィーガンなので、肉、魚、卵、乳製品、はちみつは食べられません', 'vīgan na node, niku, sakana, tamago, nyūseihin, hachimitsu wa taberaremasen'],
+  ['Vegan', 'Fish stock (dashi) is not OK either', '魚のだしもだめです', 'sakana no dashi mo dame desu'],
+  ['Vegan', 'Not even a small amount', '少しでもだめです', 'sukoshi demo dame desu'],
+  ['Vegan', 'Do you have any vegan dishes?', 'ヴィーガンの料理はありますか？', 'vīgan no ryōri wa arimasu ka?'],
+  ['Vegan', 'Is there meat or fish in this?', 'これに肉や魚は入っていますか？', 'kore ni niku ya sakana wa haitte imasu ka?'],
+  ['Vegan', 'Is there fish stock (dashi) in this?', 'これに魚のだしは入っていますか？', 'kore ni sakana no dashi wa haitte imasu ka?'],
+  ['Vegan', 'Is there milk, butter or cheese in this?', 'これに牛乳、バター、チーズは入っていますか？', 'kore ni gyūnyū, batā, chīzu wa haitte imasu ka?'],
+  ['Vegan', 'Is there egg in this?', 'これに卵は入っていますか？', 'kore ni tamago wa haitte imasu ka?'],
+  ['Vegan', 'Can you make it without meat or fish?', '肉と魚なしで作れますか？', 'niku to sakana nashi de tsukuremasu ka?'],
+  ['Vegan', 'Without bonito flakes, please', 'かつお節なしでお願いします', 'katsuobushi nashi de onegai shimasu'],
+  ['Vegan', 'Vegetables only, please', '野菜だけでお願いします', 'yasai dake de onegai shimasu'],
+
   ['Getting around', 'Where is the station?', '駅はどこですか？', 'eki wa doko desu ka?'],
   ['Getting around', 'Where is the toilet?', 'トイレはどこですか？', 'toire wa doko desu ka?'],
   ['Getting around', 'Does this train go here? (point at the name)', 'この電車はここに行きますか？', 'kono densha wa koko ni ikimasu ka?'],
@@ -157,6 +173,14 @@ export const HOWTO = [
     "No tipping. It can cause real confusion.",
     'Keep ¥100 coins for lockers and ¥5 coins for shrine offerings (5 = go-en, “good luck”).',
   ]],
+  ['🌱', 'Eating vegan', [
+    'Dashi (fish stock, usually bonito) is in miso soup, noodle broths, tempura dipping sauce and most simmered dishes. Ask about it every time.',
+    'Kombu dashi and shiitake dashi are made from seaweed and mushrooms, so they\'re fine.',
+    'Shōjin ryōri (Buddhist temple cooking) is vegan: no meat, fish, eggs or dairy. Kyoto temples are the best place to try it.',
+    'Restaurants may think a little dashi or a few bonito flakes are OK. Show “Not even a small amount” as well.',
+    'Look for ヴィーガン (vegan), 植物性 (plant-based) or the Vegan / Vegetarian filters in Google Maps and HappyCow.',
+    'Konbini: plain or umeboshi onigiri, edamame, roasted sweet potato and nuts are usually safe. Check the label for 乳 (milk) and 卵 (egg).',
+  ]],
   ['🧾', 'Tax-free shopping', [
     'Spend ¥5,000 or more before tax in one shop on one day.',
     'Show your passport at the till. Look for 免税 / Tax Free signs.',
@@ -186,6 +210,12 @@ export const HOWTO = [
     'お箸は？ ohashi wa? “Chopsticks?”',
     'ポイントカードは？ pointo kādo wa? “Point card?” — 大丈夫です.',
   ]],
+  ['🎌', 'National holidays', [
+    'This trip: Monday 12 October is Sports Day (スポーツの日). The day shows a 🎌 flag.',
+    'Sights, trains and restaurants are busier, especially on a three-day weekend. Book or go early.',
+    'Shops, restaurants and most sights stay open. Banks and some offices close.',
+    'Museums that close on Mondays usually open on a holiday Monday and close on the Tuesday instead.',
+  ]],
   ['🌀', 'Typhoons & earthquakes', [
     'October is still typhoon season. The Trip tab shows each day\'s forecast, and Now warns you the evening before.',
     'JR suspends shinkansen in bad weather. Refunds and changes are free when that happens.',
@@ -201,6 +231,28 @@ export const HOWTO = [
     '駅 station · 改札 ticket gates · 乗り換え transfer',
   ]],
 ];
+
+// National holidays (祝日), including substitute and in-between days. [English, Japanese]
+export const HOLIDAYS = {
+  '2026-01-01': ['New Year’s Day', '元日'],
+  '2026-01-12': ['Coming of Age Day', '成人の日'],
+  '2026-02-11': ['National Foundation Day', '建国記念の日'],
+  '2026-02-23': ['Emperor’s Birthday', '天皇誕生日'],
+  '2026-03-20': ['Spring Equinox Day', '春分の日'],
+  '2026-04-29': ['Shōwa Day', '昭和の日'],
+  '2026-05-03': ['Constitution Day', '憲法記念日'],
+  '2026-05-04': ['Greenery Day', 'みどりの日'],
+  '2026-05-05': ['Children’s Day', 'こどもの日'],
+  '2026-05-06': ['Substitute holiday', '振替休日'],
+  '2026-07-20': ['Marine Day', '海の日'],
+  '2026-08-11': ['Mountain Day', '山の日'],
+  '2026-09-21': ['Respect for the Aged Day', '敬老の日'],
+  '2026-09-22': ['Citizens’ Holiday', '国民の休日'],
+  '2026-09-23': ['Autumn Equinox Day', '秋分の日'],
+  '2026-10-12': ['Sports Day', 'スポーツの日'],
+  '2026-11-03': ['Culture Day', '文化の日'],
+  '2026-11-23': ['Labour Thanksgiving Day', '勤労感謝の日'],
+};
 
 // Base cities: where weather comes from, and the Japanese names for the taxi card.
 // `label` is which side of the map dot the name goes (r/l/t/b).

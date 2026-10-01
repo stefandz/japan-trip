@@ -447,6 +447,10 @@ textarea.field { resize: vertical; }
 .pill.anniv { margin-left: 4px; background: var(--shu-soft); color: var(--shu); border-color: transparent; }
 .strip a.anniv::before { content: "♥"; position: absolute; bottom: -1px; left: 50%; translate: -50% 0; font-size: 10px; color: var(--shu); }
 .strip a.anniv.on::before { color: var(--bg); }
+.pill.holiday { margin-left: 4px; background: color-mix(in srgb, var(--ai) 12%, transparent); color: var(--ai); border-color: transparent; }
+.early.holiday { border-color: color-mix(in srgb, var(--ai) 35%, var(--line)); background: color-mix(in srgb, var(--ai) 8%, var(--paper)); }
+.strip a.holiday:not(.anniv)::before { content: "•"; position: absolute; bottom: -1px; left: 50%; translate: -50% 0; font-size: 12px; color: var(--ai); }
+.strip a.holiday.on::before { color: var(--bg); }
 
 /* ---------- route map ---------- */
 .tripmap { margin: 14px 0; }

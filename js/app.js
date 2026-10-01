@@ -7,7 +7,7 @@ import { earlyStart, icsHref } from './ics.js';
 import { unlock } from './unlock.js';
 import { esc, progress, shortDate } from './util.js';
 import { refreshRate, refreshWeather, weather, wxEmoji } from './live.js';
-import { cityFor } from './content.js';
+import { cityFor, HOLIDAYS } from './content.js';
 import * as kit from './kit.js';
 import { tripMap } from './map.js';
 
@@ -187,7 +187,9 @@ function viewNow() {
       <a class="chip" href="#/taxi">🚕 Taxi card</a><a class="chip" href="#/phrases">🗣️ Phrases</a>
       <a class="chip" href="#/yen">💴 Yen</a><a class="chip" href="#/spend">🧾 Spend</a><a class="chip" href="#/sos">🆘 SOS</a>
     </nav>
+    ${holidayBanner(day)}
     ${tomorrowEarly && lateEnough ? earlyBanner(nextDay, tomorrowEarly, 'Tomorrow') : ''}
+    ${nextDay && lateEnough ? holidayBanner(nextDay, 'Tomorrow') : ''}
     ${nextDay && lateEnough ? wxWarning(nextDay) : ''}
     ${isAnniv(nextDay) && lateEnough ? `<aside class="anniv-banner"><div class="big">♥</div><div><b>Tomorrow: our anniversary</b>
       <div>${plural(annivYears(nextDay), 'year')} of ${esc(anniv().names)}</div></div></aside>` : ''}
@@ -267,7 +269,7 @@ function viewDays() {
         return `<li><a href="#/day/${d.day}" class="dayrow ${isToday ? 'today' : ''} ${done && done === d.cards.length ? 'complete' : ''}">
           <div class="daynum"><small>Day</small>${d.day}</div>
           <div class="daybody">
-            <div class="dayhead"><b>${esc(d.base)}</b> <span class="muted">${esc(d.label)}</span>${isToday ? ' <span class="pill now">today</span>' : ''}${isAnniv(d) ? ' <span class="pill anniv">♥ anniversary</span>' : ''}</div>
+            <div class="dayhead"><b>${esc(d.base)}</b> <span class="muted">${esc(d.label)}</span>${isToday ? ' <span class="pill now">today</span>' : ''}${isAnniv(d) ? ' <span class="pill anniv">♥ anniversary</span>' : ''}${HOLIDAYS[d.date] ? ` <span class="pill holiday">🎌 ${esc(HOLIDAYS[d.date][0])}</span>` : ''}</div>
             <div class="headline">${esc(d.headline)}</div>
             <div class="daymeta">${intensity(d.intensity)}${wxChip(d)}${syncState.journal[d.date]?.mood ? `<span>${syncState.journal[d.date].mood}</span>` : ''}<span>🛏️ ${esc(d.stay?.name || d.overnightText || '—')}</span></div>
           </div></a></li>`;
@@ -289,6 +291,7 @@ function viewDay(r) {
       <div class="daymeta">${intensity(day.intensity)}${wxChip(day, true)}${day.dayNotes ? `<span>${esc(day.dayNotes)}</span>` : ''}</div>
     </header>
     ${annivBanner(day)}
+    ${holidayBanner(day)}
     ${early ? earlyBanner(day, early, 'Early start') : ''}
     ${day.decisions.map(decision).join('')}
     <div class="deckbar">
@@ -316,7 +319,7 @@ function dayStrip(active, w) {
   return `<nav class="strip" id="strip">${trip.days.map(d => {
     const today = w.phase === 'during' && w.day === d;
     const complete = d.cards.length && d.cards.every(c => syncState.marks[c.id]);
-    return `<a href="#/day/${d.day}" class="${d === active ? 'on' : ''} ${today ? 'today' : ''} ${complete ? 'complete' : ''} ${isAnniv(d) ? 'anniv' : ''}">
+    return `<a href="#/day/${d.day}" class="${d === active ? 'on' : ''} ${today ? 'today' : ''} ${complete ? 'complete' : ''} ${isAnniv(d) ? 'anniv' : ''} ${HOLIDAYS[d.date] ? 'holiday' : ''}">
       <small>${esc(d.label.split(' ')[0] || '')}</small><b>${d.day}</b></a>`;
   }).join('')}</nav>`;
 }
@@ -487,6 +490,19 @@ function annivBanner(day) {
   if (!isAnniv(day)) return '';
   return `<aside class="anniv-banner"><div class="big">♥</div>
     <div><b>${esc(anniv().names)}</b><div>${plural(annivYears(day), 'year')} since we met</div></div></aside>`;
+}
+
+// A national holiday on this day, or the Tuesday after a holiday Monday (when Monday-closing museums shut instead).
+function holidayBanner(day, when = '') {
+  const h = HOLIDAYS[day.date];
+  const dow = new Date(day.date + 'T12:00:00Z').getUTCDay();
+  const prev = new Date(Date.parse(day.date) - 86400000).toISOString().slice(0, 10);
+  if (!h && !(dow === 2 && HOLIDAYS[prev])) return '';
+  const head = h ? `${when ? `${when}: ` : ''}${esc(h[0])} <span lang="ja">${esc(h[1])}</span>` : `${when || 'Today'}: day after the holiday`;
+  const note = h
+    ? `National holiday. Expect busier trains and sights.${dow === 1 ? ' Museums that shut on Mondays are open, and close tomorrow instead.' : ''}`
+    : 'Many museums that opened for Monday’s holiday are closed today. Check before going.';
+  return `<aside class="early holiday"><div class="big">🎌</div><div><b>${head}</b><div class="muted">${note}</div></div></aside>`;
 }
 
 // Forecast for a day's base city (open-meteo covers ~16 days ahead; past days keep their last forecast).
