@@ -5,7 +5,7 @@ import { createSync } from './sync.js';
 import { nowInstant, wallClock, fmtMinutes, daysBetween } from './time.js';
 import { earlyStart, icsHref } from './ics.js';
 import { unlock } from './unlock.js';
-import { esc, progress, shortDate } from './util.js';
+import { esc, progress, shortDate, inkAnim } from './util.js';
 import { refreshRate, refreshWeather, weather, wxEmoji } from './live.js';
 import { cityFor, HOLIDAYS } from './content.js';
 import * as kit from './kit.js';
@@ -18,6 +18,7 @@ let trip = null;          // parsed model
 let meta = {};            // { fetchedAt, fromCache, error }
 let sync = null;
 let syncState = { marks: {}, stamps: {}, choices: {} };
+const markedAt = {};      // card id → when it was marked done here, for the hanko animation
 
 // ---------- boot ----------
 
@@ -332,7 +333,7 @@ function card(c, day, { hero = false } = {}) {
   const nav = navLinks(c, day);
   return `
   <article class="card ${hero ? 'hero-card' : ''} ${mark || ''} ${c.leg ? 'travel' : ''}" style="--h:${hue}">
-    ${mark === 'done' ? '<div class="hanko" aria-label="Done">済</div>' : ''}
+    ${mark === 'done' ? `<div class="hanko"${inkAnim(markedAt[c.id])} aria-label="Done">済</div>` : ''}
     <div class="cardtop">
       <span class="type">${c.typeEmoji} ${esc(c.typeLabel)}</span>
       <span class="when">${c.slotEmoji} ${esc(c.exactTime || c.slotLabel)}</span>
@@ -429,7 +430,7 @@ function viewStamps() {
       ${trip.stamps.map(s => {
         const have = stampGot(s);
         return `<button class="stamp ${have ? 'got' : ''} ${s.confirmed ? '' : 'maybe'}" data-action="stamp" data-id="${s.id}">
-          <div class="ink"><span>${esc(initials(s.station))}</span><small>${esc(s.station)}</small></div>
+          <div class="ink"${have ? inkAnim(syncState.stamps[s.id]) : ''}><span>${esc(initials(s.station))}</span><small>${esc(s.station)}</small></div>
           <div class="info"><b>${esc(s.station)}</b>
             <div class="muted">${esc(s.day)}</div>
             <p>${esc(s.design)}</p>
@@ -619,6 +620,7 @@ document.addEventListener('click', e => {
   if (!btn) return;
   const { action, id, val } = btn.dataset;
   if (action === 'mark') {
+    markedAt[id] = Date.now();
     sync.set(`marks/${id}`, syncState.marks[id] === val ? null : val);
     if (val === 'done' && syncState.marks[id] === 'done') buzz();
   } else if (action === 'stamp') {

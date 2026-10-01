@@ -133,10 +133,10 @@ h2.section .muted { text-transform: none; letter-spacing: 0; font-weight: 500; }
   position: absolute; right: 14px; top: 38px; width: 64px; height: 64px; border-radius: 50%;
   border: 3px solid var(--shu); color: var(--shu); display: grid; place-items: center;
   font-size: 32px; font-weight: 900; transform: rotate(-14deg); opacity: .85; pointer-events: none;
-  animation: stamp .35s cubic-bezier(.2, 1.6, .4, 1);
   mix-blend-mode: multiply;
 }
 @media (prefers-color-scheme: dark) { .hanko { mix-blend-mode: normal; } }
+.hanko[data-fresh] { animation: stamp .35s cubic-bezier(.2, 1.6, .4, 1) backwards; }
 @keyframes stamp { from { transform: rotate(-14deg) scale(2.2); opacity: 0 } to { transform: rotate(-14deg) scale(1); opacity: .85 } }
 
 /* travel ticket */
@@ -256,8 +256,9 @@ h2.section .muted { text-transform: none; letter-spacing: 0; font-weight: 500; }
 .stamp .ink small { font-size: 9px; font-weight: 700; max-width: 70px; line-height: 1.1; }
 .stamp.got .ink {
   border: 3px double var(--shu); color: var(--shu); background: color-mix(in srgb, var(--shu) 8%, transparent);
-  transform: rotate(-8deg); animation: stamp .4s cubic-bezier(.2, 1.6, .4, 1);
+  transform: rotate(-8deg);
 }
+.stamp.got .ink[data-fresh] { animation: stamp .4s cubic-bezier(.2, 1.6, .4, 1) backwards; }
 .stamp.maybe:not(.got) .ink { opacity: .6; }
 .stamp .info { min-width: 0; font-size: 14px; }
 .stamp .info b { font-size: 17px; }
@@ -415,7 +416,8 @@ textarea.field { resize: vertical; }
   grid-row: span 2; width: 34px; height: 34px; border-radius: 50%; border: 2px dashed var(--line);
   display: grid; place-items: center; color: var(--shu); font-weight: 900;
 }
-.fooditem.got .seal { border: 2px solid var(--shu); transform: rotate(-10deg); animation: stamp .35s cubic-bezier(.2, 1.6, .4, 1); }
+.fooditem.got .seal { border: 2px solid var(--shu); transform: rotate(-10deg); }
+.fooditem.got .seal[data-fresh] { animation: stamp .35s cubic-bezier(.2, 1.6, .4, 1) backwards; }
 .fooditem small { color: var(--muted); font-size: 12px; }
 .fooditem.got b { color: var(--muted); }
 

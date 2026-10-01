@@ -4,7 +4,7 @@ import { CONFIG } from '../config.js';
 import { PHRASES, SOS_NUMBERS, FOOD, HOWTO, CITIES, cityFor } from './content.js';
 import { rate } from './live.js';
 import { hash } from './parse.js';
-import { esc, progress, shortDate } from './util.js';
+import { esc, progress, shortDate, inkAnim } from './util.js';
 
 export const KIT_ROUTES = ['kit', 'phrases', 'yen', 'taxi', 'sos', 'spend', 'food', 'howto'];
 
@@ -190,7 +190,7 @@ export function viewFood(ctx) {
   const items = foodItems(ctx.state);
   const eaten = items.filter(f => ctx.state.food[f.id]);
   const row = f => `<li><button class="fooditem ${ctx.state.food[f.id] ? 'got' : ''}" data-action="food" data-id="${f.id}">
-      <span class="seal">${ctx.state.food[f.id] ? '済' : ''}</span><b>${esc(f.name)}</b><small>${esc(f.where)}</small></button>
+      <span class="seal"${ctx.state.food[f.id] ? inkAnim(ctx.state.food[f.id]) : ''}>${ctx.state.food[f.id] ? '済' : ''}</span><b>${esc(f.name)}</b><small>${esc(f.where)}</small></button>
       ${f.custom ? `<button class="x" data-action="food-del" data-id="${f.id}" aria-label="Remove">×</button>` : ''}</li>`;
   return `${back}<header class="page"><h1>Food list</h1><p class="muted">${eaten.length} of ${items.length} eaten</p>${progress(eaten.length, items.length)}</header>
     <form class="addrow" data-form="food"><input id="food-new" class="field" placeholder="Add something to try" autocomplete="off" required><button class="btn">Add</button></form>
