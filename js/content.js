@@ -70,6 +70,18 @@ export const PHRASES = [
   ["Getting around", "I've lost my ticket", '切符をなくしました', 'kippu o nakushimashita'],
   ["Getting around", "We're lost", '道に迷いました', 'michi ni mayoimashita'],
 
+  ['Stamps', 'Is there a stamp here?', 'ここにスタンプはありますか？', 'koko ni sutanpu wa arimasu ka?'],
+  ['Stamps', 'Is there a station (eki) stamp?', '駅スタンプはありますか？', 'eki sutanpu wa arimasu ka?'],
+  ['Stamps', 'Is there a souvenir stamp?', '記念スタンプはありますか？', 'kinen sutanpu wa arimasu ka?'],
+  ['Stamps', 'Where is the stamp?', 'スタンプはどこにありますか？', 'sutanpu wa doko ni arimasu ka?'],
+  ['Stamps', 'Where can I get the stamp?', 'スタンプはどこで押せますか？', 'sutanpu wa doko de osemasu ka?'],
+  ['Stamps', 'Is the stamp inside the ticket gates?', 'スタンプは改札の中ですか？', 'sutanpu wa kaisatsu no naka desu ka?'],
+  ['Stamps', 'May I use the stamp?', 'スタンプを押してもいいですか？', 'sutanpu o oshitemo ii desu ka?'],
+  ['Stamps', 'Do you have an ink pad?', 'スタンプ台はありますか？', 'sutanpudai wa arimasu ka?'],
+  ['Stamps', 'Do you sell stamp books?', 'スタンプ帳は売っていますか？', 'sutanpuchō wa utte imasu ka?'],
+  ['Stamps', 'Can I get a goshuin (temple stamp)?', '御朱印はいただけますか？', 'goshuin wa itadakemasu ka?'],
+  ['Stamps', 'Where can I get a goshuin?', '御朱印はどこでいただけますか？', 'goshuin wa doko de itadakemasu ka?'],
+
   ['Shopping', 'How much is this?', 'これはいくらですか？', 'kore wa ikura desu ka?'],
   ["Shopping", "I'm just looking", '見ているだけです', 'mite iru dake desu'],
   ['Shopping', 'Can I try this on?', '試着してもいいですか？', 'shichaku shitemo ii desu ka?'],
