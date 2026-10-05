@@ -25,6 +25,7 @@ Also: each day shows its forecast (Trip list, day header, Now), and the evening 
 |---|---|---|
 | Phrases, how-to, SOS numbers, food starter list, national holidays | Built in (`js/content.js`) | The Japanese needs to be right, and it has to work with no data at all. |
 | Taxi card | Sheet: optional **Name (JP)**, **Address (JP)**, **Phone** columns on Accommodation | Copy them from each booking confirmation. Without them the card shows the English name + a map link. |
+| Ticket QR + collection code | Sheet: optional **Collection code** and **QR** columns on Travel | QR is an image placed in the cell, or a Google Drive link to one (several links for several tickets). Needs the Apps Script route. |
 | Gifts | Sheet: optional **Gifts** tab (For, Gift, Where to look, Budget, Status, Notes) | Ticks sync between phones. "Bought" in Status also ticks one off. |
 | Insurance, medical notes, contacts | `EMERGENCY` in `secrets.json` (encrypted) | Personal. Kept out of the link-shared Sheet. |
 | Spend, food ticks & additions, journal | Shared state (Firebase, or this phone) | Added on the go, from either phone. |
@@ -35,6 +36,8 @@ Also: each day shows its forecast (Trip list, day header, Now), and the evening 
 The app shell, fonts and Firebase SDK are cached by the service worker. The Sheet, rate and forecasts are cached in localStorage, and so is shared state. Changes made offline go into an outbox that's replayed to Firebase when you're back online, even if the app was closed in between. Prep shows how many changes are waiting. Only map links and live data need a connection.
 
 Travel cards pull the booking from the **Travel** tab. They match on the train/flight number showing up in the itinerary row, or on departure time if not. Car, seats and ref get pulled out of the Notes text. Split legs like "Tsurugi 17 / Thunderbird 18" show the right seats on each train's card.
+
+If the Travel row has a **Collection code** or a **QR**, the card shows them under the ref. Tap the QR for a full-screen, white-background copy with the code underneath. The Sheet script sends each picture inside the plan itself, so it's there offline; crop screenshots to just the QR to keep the offline copy small (anything large is redrawn at 800px). After adding the QR column for the first time, paste the current `tools/sheet-proxy.gs` into Apps Script and deploy a **new version**. It will ask for Drive and external-request permission, which it needs to read the pictures.
 
 ## Setup
 

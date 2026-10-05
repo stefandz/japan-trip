@@ -13,6 +13,7 @@ export async function fetchTabs() {
   else if (CONFIG.SHEET_SCRIPT_URL) tabs = await viaScript();
   else if (CONFIG.SHEETS_API_KEY) tabs = await viaSheetsApi();
   else tabs = await viaGviz();
+  await shrinkImages(tabs);
   const fetchedAt = new Date().toISOString();
   try { localStorage.setItem(CACHE_KEY, JSON.stringify({ tabs, fetchedAt })); } catch {}
   return { tabs, fetchedAt, fromCache: false };
@@ -64,6 +65,36 @@ async function viaGviz() {
     return [t, parseCSV(await res.text())];
   }));
   return Object.fromEntries(entries);
+}
+
+// QR images arrive inlined as data: URLs. Big ones (a whole screenshot) are redrawn smaller
+// so the offline copy of the plan still fits in localStorage.
+const IMG_MAX_CHARS = 120_000, IMG_MAX_PX = 800;
+
+async function shrinkImages(tabs) {
+  for (const rows of Object.values(tabs)) {
+    for (const row of rows) {
+      for (let i = 0; i < row.length; i++) {
+        if (typeof row[i] !== 'string' || !row[i].includes('data:image/')) continue;
+        const parts = await Promise.all(row[i].split(/\s+/).map(p =>
+          p.startsWith('data:image/') && p.length > IMG_MAX_CHARS ? shrink(p).catch(() => p) : p));
+        row[i] = parts.join('\n');
+      }
+    }
+  }
+}
+
+async function shrink(dataUrl) {
+  const img = new Image();
+  img.src = dataUrl;
+  await img.decode();
+  const scale = Math.min(1, IMG_MAX_PX / Math.max(img.naturalWidth, img.naturalHeight));
+  const canvas = document.createElement('canvas');
+  canvas.width = Math.round(img.naturalWidth * scale);
+  canvas.height = Math.round(img.naturalHeight * scale);
+  canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+  const out = canvas.toDataURL('image/png');
+  return out.length < dataUrl.length ? out : dataUrl;
 }
 
 async function getJSON(url) {

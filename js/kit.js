@@ -259,6 +259,21 @@ function showBig({ big, mid, small }) {
   el.className = `showbig ${len > 120 ? 'long' : len > 30 ? 'medium' : ''}`;
   el.innerHTML = `<div class="sb-big" lang="ja">${esc(big)}</div>${mid ? `<div class="sb-mid" lang="ja">${esc(mid)}</div>` : ''}
     ${small ? `<div class="sb-small">${esc(small)}</div>` : ''}<div class="sb-close">Tap to close</div>`;
+  present(el);
+}
+
+// A booking's QR on plain white (so it scans in dark mode too), with its codes underneath.
+function showQR(leg, i) {
+  const el = document.createElement('div');
+  el.className = 'showbig qr';
+  el.innerHTML = `<div class="sb-small">${esc(leg.number || leg.leg)}${leg.qrs.length > 1 ? ` · ${i + 1} of ${leg.qrs.length}` : ''}</div>
+    <img src="${esc(leg.qrs[i])}" alt="QR code">
+    ${leg.collection ? `<div class="sb-code"><small>Collection code</small>${esc(leg.collection)}</div>` : ''}
+    ${leg.confirmation ? `<div class="sb-small">Ref ${esc(leg.confirmation)}</div>` : ''}<div class="sb-close">Tap to close</div>`;
+  present(el);
+}
+
+function present(el) {
   el.addEventListener('click', () => { el.remove(); wakeLock?.release().catch(() => {}); wakeLock = null; });
   document.body.append(el);
   navigator.wakeLock?.request('screen').then(l => { wakeLock = l; }).catch(() => {});
@@ -278,6 +293,8 @@ export function kitClick(action, btn, ctx) {
     const s = ctx.trip.stays.find(x => x.checkIn === btn.dataset.checkin);
     const city = CITIES[cityFor(s.city)]?.ja || s.city;
     showBig({ big: s.nameJa || s.name, mid: s.addressJa || city, small: 'この住所までお願いします' });
+  } else if (action === 'show-qr') {
+    showQR(ctx.trip.legs[btn.dataset.leg], Number(btn.dataset.i));
   } else if (action === 'spcat') {
     spendCat = val;
     btn.parentElement.querySelectorAll('.chip').forEach(b => b.classList.toggle('on', b === btn));

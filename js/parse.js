@@ -8,7 +8,8 @@ const COLS = {
   Itinerary: { date: 'Date', day: 'Day', slot: 'Time', exact: 'Exact time', activity: 'Activity', location: 'Location', gettingThere: 'Getting there', type: 'Type', status: 'Status', notes: 'Notes' },
   Accommodation: { city: 'City', checkIn: 'Check-in', checkOut: 'Check-out', nights: 'Nights', name: 'Option(s)', status: 'Status', confirmation: 'Confirmation code', notes: 'Notes',
     nameJa: 'Name (JP)', addressJa: 'Address (JP)', phone: 'Phone' },
-  Travel: { leg: 'Leg', date: 'Date', mode: 'Mode', number: 'Flight/Train No.', departs: 'Sched. departure', arrives: 'Sched. arrival', status: 'Status', confirmation: 'Confirmation code', notes: 'Notes' },
+  Travel: { leg: 'Leg', date: 'Date', mode: 'Mode', number: 'Flight/Train No.', departs: 'Sched. departure', arrives: 'Sched. arrival', status: 'Status', confirmation: 'Confirmation code', notes: 'Notes',
+    collection: 'Collection code', qr: 'QR' },
   'Eki Stamps': { station: 'Station', line: 'Line / operator', day: 'Day', design: 'Design / highlight', where: 'Where to find it', status: 'Status' },
   Countdown: { due: 'Due date', task: 'Task', category: 'Category', status: 'Status', notes: 'Notes' },
   'Open Decisions': { topic: 'Topic', question: 'Open question', options: 'Options', leaning: 'Leaning' },
@@ -17,8 +18,8 @@ const COLS = {
 
 // Optional tabs: the app still works if these are missing.
 const OPTIONAL = new Set(['Overview', 'Countdown', 'Open Decisions', 'Eki Stamps', 'Gifts']);
-// Optional columns: extras for the taxi card. Blank when absent, never an error.
-const OPTIONAL_COLS = new Set(['nameJa', 'addressJa', 'phone']);
+// Optional columns: extras for the taxi card and the ticket. Blank when absent, never an error.
+const OPTIONAL_COLS = new Set(['nameJa', 'addressJa', 'phone', 'collection', 'qr']);
 
 const SLOT_DEFAULT_MIN = { morning: 8 * 60, afternoon: 13 * 60, evening: 18 * 60, night: 21 * 60 };
 const MONTHS = { jan: 1, feb: 2, mar: 3, apr: 4, may: 5, jun: 6, jul: 7, aug: 8, sep: 9, oct: 10, nov: 11, dec: 12 };
@@ -124,7 +125,12 @@ function parseLeg(r) {
   for (const m of r.notes.matchAll(re)) {
     seats.push({ train: m[1] || (numbers.length === 1 ? numbers[0] : ''), car: m[2], seats: m[3].split('&').map(s => s.trim()) });
   }
-  return { ...r, date: toISO(r.date), numbers, seats, departMin: firstTime(r.departs) };
+  // The QR cell arrives as one image per chunk (the Sheet script inlines them as data: URLs).
+  // Anything else in there is shown as a note, e.g. why an image couldn't be read.
+  const qrParts = r.qr.split(/\s+/).filter(Boolean);
+  const qrs = qrParts.filter(isImage);
+  const qrNote = qrParts.filter(p => !isImage(p)).join(' ');
+  return { ...r, date: toISO(r.date), numbers, seats, qrs, qrNote, departMin: firstTime(r.departs) };
 }
 
 // Pin each booked train/flight number to the first itinerary card that mentions it.
@@ -192,6 +198,7 @@ function splitEmoji(s = '') {
 }
 
 const dash = s => (s === '—' || s === '-' ? '' : s);
+const isImage = s => /^(data:image\/|https?:\/\/)/i.test(s);
 const firstTime = s => { const m = s.match(/(\d{1,2}):(\d{2})/); return m ? Number(m[1]) * 60 + Number(m[2]) : null; };
 
 // Stable short id for sync keys (Firebase-safe characters only).

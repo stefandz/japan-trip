@@ -358,6 +358,7 @@ function ticket(c) {
   const seats = c.seats.length ? c.seats : leg.seats;
   // A leg can be several trains ("Tsurugi 17 / Thunderbird 18"); show the one this card is about.
   const partial = c.trains.length && c.trains.length < leg.numbers.length;
+  const legIdx = trip.legs.indexOf(leg);
   return `<div class="ticket">
     <div class="tk-row">
       <div class="tk-num">${esc(partial ? c.trains.join(' / ') : leg.number)}</div>
@@ -367,6 +368,15 @@ function ticket(c) {
     ${seats.map(s => `<div class="tk-seat">${s.train && seats.length > 1 ? `<small>${esc(s.train)}</small>` : ''}
       <span>Car <b>${esc(s.car)}</b></span><span>Seats <b>${s.seats.map(esc).join(' &amp; ')}</b></span></div>`).join('')}
     ${leg.confirmation ? `<button class="tk-conf" data-action="copy" data-text="${esc(leg.confirmation)}">Ref <b>${esc(leg.confirmation)}</b> <small>tap to copy</small></button>` : ''}
+    ${leg.collection || leg.qrs.length || leg.qrNote ? `<div class="tk-pickup">
+      ${leg.qrs.map((src, i) => `<button class="tk-qr" data-action="show-qr" data-leg="${legIdx}" data-i="${i}" aria-label="Show QR code full screen"><img src="${esc(src)}" alt="QR code"></button>`).join('')}
+      <div class="tk-collect">
+        ${leg.collection ? `<small>Collection code</small>
+          <button class="tk-code" data-action="copy" data-text="${esc(leg.collection)}">${esc(leg.collection)}</button>` : ''}
+        ${leg.qrs.length ? `<small>Tap the QR to show it full screen</small>` : ''}
+        ${leg.qrNote ? `<small>${esc(leg.qrNote)}</small>` : ''}
+      </div>
+    </div>` : ''}
   </div>`;
 }
 
