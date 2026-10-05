@@ -420,10 +420,10 @@ textarea.field { resize: vertical; }
 
 /* food */
 .addrow { display: flex; gap: 8px; margin: 12px 0; }
-.foodlist { list-style: none; padding: 0; margin: 0; display: grid; gap: 8px; }
-.foodlist li { display: flex; align-items: center; gap: 4px; }
+.foodlist { list-style: none; padding: 0; margin: 0; display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; }
+.foodlist li { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; }
 .fooditem {
-  flex: 1; display: grid; grid-template-columns: 34px 1fr; gap: 0 12px; align-items: center; text-align: left;
+  flex: 1; min-width: 0; display: grid; grid-template-columns: 34px minmax(0, 1fr); gap: 0 12px; align-items: center; text-align: left;
   padding: 10px 14px; border-radius: 14px; background: var(--paper); border: 1px solid var(--line);
 }
 .fooditem .seal {
@@ -432,7 +432,9 @@ textarea.field { resize: vertical; }
 }
 .fooditem.got .seal { border: 2px solid var(--shu); transform: rotate(-10deg); }
 .fooditem.got .seal[data-fresh] { animation: stamp .35s cubic-bezier(.2, 1.6, .4, 1) backwards; }
+.fooditem b, .fooditem small { overflow-wrap: anywhere; }
 .fooditem small { color: var(--muted); font-size: 12px; }
+.giftlinks { flex-basis: 100%; display: flex; flex-wrap: wrap; gap: 6px; padding-left: 14px; }
 .fooditem.got b { color: var(--muted); }
 
 /* how-to */

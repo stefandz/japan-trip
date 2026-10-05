@@ -203,6 +203,8 @@ export function viewFood(ctx) {
 // ----- gifts (ideas live in the Sheet's Gifts tab; ticks sync like stamps) -----
 
 const giftGot = (g, state) => g.sheetBought || !!state.gifts[g.id];
+const URL_RE = /https?:\/\/[^\s)]+/g;
+const host = u => { try { return new URL(u).hostname.replace(/^www\./, ''); } catch { return u; } };
 
 export function viewGifts(ctx) {
   const gifts = ctx.trip.gifts;
@@ -212,10 +214,14 @@ export function viewGifts(ctx) {
   const people = [...new Set(gifts.map(g => g.for || 'Anyone'))];
   const row = g => {
     const have = giftGot(g, ctx.state);
-    const bits = [g.where && `🔎 ${g.where}`, g.budget && `💴 ${g.budget}`, g.notes].filter(Boolean).map(esc).join(' · ');
+    // Links can't sit inside the tick button, so they come out of the text and go underneath as chips.
+    const links = `${g.where || ''} ${g.notes || ''}`.match(URL_RE) || [];
+    const text = s => (s || '').replace(URL_RE, '').replace(/\s+/g, ' ').trim();
+    const bits = [text(g.where) && `🔎 ${text(g.where)}`, g.budget && `💴 ${g.budget}`, text(g.notes)].filter(Boolean).map(esc).join(' · ');
     return `<li><button class="fooditem ${have ? 'got' : ''}" data-action="gift" data-id="${g.id}">
       <span class="seal"${have && ctx.state.gifts[g.id] ? inkAnim(ctx.state.gifts[g.id]) : ''}>${have ? '済' : ''}</span>
-      <b>${esc(g.gift)}</b>${bits ? `<small>${bits}</small>` : ''}</button></li>`;
+      <b>${esc(g.gift)}</b>${bits ? `<small>${bits}</small>` : ''}</button>
+      ${links.length ? `<div class="giftlinks">${links.map(u => `<a class="chip nav" target="_blank" rel="noopener" href="${esc(u)}">🔗 ${esc(host(u))}</a>`).join('')}</div>` : ''}</li>`;
   };
   return `${back}<header class="page"><h1>Gifts</h1><p class="muted">${got} of ${gifts.length} bought</p>${progress(got, gifts.length)}</header>
     ${people.map(p => {
