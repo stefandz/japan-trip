@@ -133,7 +133,7 @@ function render({ fresh = false } = {}) {
   if (fields) restoreFields(fields);
   if (keep) restoreScroll(keep);
   else {
-    window.scrollTo(0, 0);
+    app.scrollTo(0, 0);
     if (r.name === 'day') focusCard(r.b || todaysCardId(r.a), false);
   }
   if (r.name === 'day') watchCarousel();
@@ -614,13 +614,13 @@ function restoreFields({ values, focus }) {
 }
 
 function snapshotScroll() {
-  return { y: window.scrollY, x: document.getElementById('deck')?.scrollLeft, sx: document.getElementById('strip')?.scrollLeft };
+  return { y: app.scrollTop, x: document.getElementById('deck')?.scrollLeft, sx: document.getElementById('strip')?.scrollLeft };
 }
 
 function restoreScroll({ y, x, sx }) {
   if (x != null && document.getElementById('deck')) document.getElementById('deck').scrollLeft = x;
   if (sx != null && document.getElementById('strip')) document.getElementById('strip').scrollLeft = sx;
-  window.scrollTo(0, y);
+  app.scrollTo(0, y);
 }
 
 // ---------- actions ----------

@@ -30,8 +30,11 @@
 }
 
 * { box-sizing: border-box; }
-html { -webkit-text-size-adjust: 100%; }
+html { -webkit-text-size-adjust: 100%; height: 100%; overflow: hidden; }
+/* The page itself never scrolls: main does, and the tab bar is an ordinary row beneath it.
+   A fixed bar drifts up the screen on phones when the browser's own toolbar hides on scroll. */
 body {
+  height: 100vh; height: 100dvh; display: flex; flex-direction: column; overflow: hidden;
   margin: 0; background: var(--bg); color: var(--ink);
   font: 16px/1.45 "Zen Maru Gothic", system-ui, -apple-system, "Hiragino Sans", sans-serif;
   -webkit-font-smoothing: antialiased;
@@ -43,8 +46,9 @@ a { color: var(--ai); }
 button { font: inherit; color: inherit; cursor: pointer; }
 
 main {
-  max-width: 560px; margin: 0 auto;
-  padding: calc(env(safe-area-inset-top) + 16px) 16px calc(var(--tabs-h) + env(safe-area-inset-bottom) + 32px);
+  flex: 1; min-height: 0; overflow-y: auto; -webkit-overflow-scrolling: touch;
+  /* a centred column, 560px at most */
+  padding: calc(env(safe-area-inset-top) + 16px) max(16px, calc(50% - 264px)) 32px;
 }
 
 h1 { font-size: 30px; font-weight: 900; line-height: 1.1; margin: 2px 0 6px; letter-spacing: -.01em; }
@@ -55,11 +59,10 @@ h2.section .muted { text-transform: none; letter-spacing: 0; font-weight: 500; }
 
 /* ---------- tabs ---------- */
 .tabs {
-  position: fixed; inset: auto 0 0 0; z-index: 10;
+  flex: none; z-index: 10;
   display: flex; justify-content: center; gap: 4px;
   padding: 6px 8px calc(6px + env(safe-area-inset-bottom));
-  background: color-mix(in srgb, var(--paper) 88%, transparent);
-  backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+  background: var(--paper);
   border-top: 1px solid var(--line);
 }
 .tabs a {
@@ -188,7 +191,7 @@ h2.section .muted { text-transform: none; letter-spacing: 0; font-weight: 500; }
 /* ---------- day strip + carousel ---------- */
 .strip {
   display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; margin: 0 -16px; padding: 2px 16px 6px;
-  position: sticky; top: 0; z-index: 5; background: var(--bg);
+  position: sticky; top: calc(-1 * env(safe-area-inset-top) - 16px); z-index: 5; background: var(--bg);   /* cancels main's top padding */
   padding-top: calc(env(safe-area-inset-top) + 6px); margin-top: calc(-1 * env(safe-area-inset-top) - 16px);
 }
 .strip::-webkit-scrollbar { display: none; }
