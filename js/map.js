@@ -22,6 +22,12 @@ function legsInto(trip, stop) {
   return trip.legs.filter(l => l.date === stop.days[0].date && !/flight/i.test(l.mode));
 }
 
+// The itinerary card for the move into a stop: the booked train's card, else that day's first travel card.
+function moveCard(trip, stop) {
+  const day = stop.days[0], legs = legsInto(trip, stop);
+  return day.cards.find(c => legs.includes(c.leg)) || day.cards.find(c => c.typeKey === 'travel' && !c.isOvernight) || null;
+}
+
 function dayTrips(trip) {
   const seen = new Map();
   for (const day of trip.days) {
@@ -61,7 +67,7 @@ export function tripMap(trip, { today = null, focus = null, variant = 'full' } =
     const done = today && to.days[0].date <= today.date;
     const isFocus = focus && to.days[0].date === focus.date;
     const trains = legsInto(trip, to).map(l => l.number).join(' → ');
-    return { d: `M${ax} ${ay}Q${cx} ${cy} ${bx} ${by}`, done, isFocus, from: from.city, to: to.city, date: to.days[0], trains };
+    return { d: `M${ax} ${ay}Q${cx} ${cy} ${bx} ${by}`, done, isFocus, from: from.city, to: to.city, date: to.days[0], trains, card: moveCard(trip, to) };
   });
 
   const textAt = (x, y, side, r) => {
@@ -97,8 +103,8 @@ export function tripMap(trip, { today = null, focus = null, variant = 'full' } =
   }).join('');
 
   // Train names go under the map, not on it: they'd collide with the city labels.
-  const legRow = s => `<li class="${s.done ? 'done' : ''}"><b>${esc(s.from)} → ${esc(s.to)}</b>
-    <span>${s.trains ? `🚄 ${esc(s.trains)}` : '🚃 local train'}</span><small>${esc(s.date.label)}</small></li>`;
+  const legRow = s => `<li class="${s.done ? 'done' : ''}"><a href="#/day/${s.date.day}${s.card ? `/${s.card.id}` : ''}"><b>${esc(s.from)} → ${esc(s.to)}</b>
+    <span>${s.trains ? `🚄 ${esc(s.trains)}` : '🚃 local train'}</span><small>${esc(s.date.label)}</small></a></li>`;
   const focusSeg = segs.find(s => s.isFocus);
   const below = variant === 'full' ? `<ol class="legs">${segs.map(legRow).join('')}</ol>`
     : variant === 'day' && focusSeg ? `<ol class="legs">${legRow(focusSeg)}</ol>` : '';
@@ -110,7 +116,7 @@ export function tripMap(trip, { today = null, focus = null, variant = 'full' } =
       ${segs.map(s => `<path class="seg ${s.done ? 'done' : ''} ${s.isFocus ? 'focus' : ''}" d="${s.d}" stroke-width="${fs * 0.16}"/>`).join('')}
       ${spurs}${markers}
     </svg>
-    ${variant === 'full' ? `<figcaption>Tap a city to jump to its days.${today ? ' <span class="you">●</span> you are here' : ''}</figcaption>` : ''}
+    ${variant === 'full' ? `<figcaption>Tap a city to jump to its days, or a train for its ticket.${today ? ' <span class="you">●</span> you are here' : ''}</figcaption>` : ''}
     ${below}
   </figure>`;
 }
