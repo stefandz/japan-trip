@@ -402,7 +402,7 @@ function overnight(day) {
   return `<aside class="overnight">
     <div class="moon">🌙</div>
     <div><div class="kicker">${tag}</div><b>${esc(name)}</b>
-      ${stay ? `<div class="muted">${esc(stay.city)} · night ${daysBetween(stay.checkIn, day.date) + 1} of ${stay.nights ?? '?'}</div>` : ''}
+      ${stay ? `<div class="muted">${esc(stay.city)} · night ${day.stayNight} of ${day.stayNights}</div>` : ''}
       ${stay?.confirmation ? `<div class="muted">Ref ${esc(stay.confirmation)}</div>` : ''}
     </div>
     ${stay ? `<span class="chips"><a class="chip" href="#/taxi" aria-label="Taxi card">🚕</a><a class="chip nav" target="_blank" rel="noopener" href="https://www.google.com/maps/search/?api=1&query=${q}">🗺️</a></span>` : ''}

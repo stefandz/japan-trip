@@ -63,6 +63,9 @@ export function parseTrip(tabs) {
       intensity: Number(ov.intensity) || null, dayNotes: ov.notes || '',
       cards: dayCards,
       stay: stayOn(date),
+      // Counted over the nights actually slept there, so an unused first night doesn't make check-in "night 2".
+      stayNight: dates.slice(0, i + 1).filter(d => stayOn(d) === stayOn(date)).length,
+      stayNights: dates.filter(d => stayOn(d) === stayOn(date)).length,
       checkIn: stayOn(date) !== (i ? stayOn(dates[i - 1]) : null) ? stayOn(date) : null,
       checkOut: stays.find(s => s.checkOut === date) || null,
       decisions: decisions.filter(d => d.date === date || (d.day !== null && d.day === dayNum)),
