@@ -1,4 +1,4 @@
-// Shared runtime state (done/skip marks, eki stamps, resolved decisions, spend, food, journal).
+// Shared runtime state (done/skip marks, eki stamps, resolved decisions, spend, food, journal, day notes).
 // Firebase Realtime Database when configured; otherwise this device only.
 // Writes go through an outbox kept in localStorage, so changes made offline (even if the
 // app is closed before it reconnects) are replayed to Firebase the next time it can.
@@ -62,7 +62,7 @@ export async function createSync(onChange) {
 }
 
 function normalise(v) {
-  return { marks: {}, stamps: {}, choices: {}, spend: {}, food: {}, foodCustom: {}, journal: {}, gifts: {}, ...(v || {}) };
+  return { marks: {}, stamps: {}, choices: {}, spend: {}, food: {}, foodCustom: {}, journal: {}, gifts: {}, notes: {}, ...(v || {}) };
 }
 
 const load = () => normalise(loadJSON(LOCAL_KEY));

@@ -18,7 +18,7 @@ const nav = document.getElementById('tabs');
 let trip = null;          // parsed model
 let meta = {};            // { fetchedAt, fromCache, error }
 let sync = null;
-let syncState = { marks: {}, stamps: {}, choices: {} };
+let syncState = { marks: {}, stamps: {}, choices: {}, notes: {} };
 const markedAt = {};      // card id → when it was marked done here, for the hanko animation
 
 // ---------- boot ----------
@@ -32,7 +32,10 @@ async function boot() {
   syncState = sync.state;
   render();
   refresh();
-  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') refresh(); });
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') refresh();
+    else if (app.contains(document.activeElement)) document.activeElement.blur();   // saves a note or journal still being typed
+  });
   window.addEventListener('hashchange', () => render({ fresh: true }));
   setInterval(() => { if (route().name === 'now') render(); }, 60000);
   window.addEventListener('online', () => refresh(true));
@@ -267,7 +270,7 @@ function viewDays() {
   return `
     <header class="page"><h1>The trip</h1><p class="muted">${trip.days.length} days · tap one to dive in</p></header>
     <input id="plan-q" class="field" type="search" placeholder="Is it in the plan? e.g. Nara, sumo, onsen" value="${esc(planQuery)}" autocomplete="off">
-    <div id="plan-hits">${searchPlan(trip, planQuery)}</div>
+    <div id="plan-hits">${searchPlan(trip, planQuery, syncState.notes)}</div>
     ${tripMap(trip, { today: w.phase === 'during' ? w.day : null })}
     <ol class="daylist">
       ${trip.days.map(d => {
@@ -278,7 +281,7 @@ function viewDays() {
           <div class="daybody">
             <div class="dayhead"><b>${esc(d.base)}</b> <span class="muted">${esc(d.label)}</span>${isToday ? ' <span class="pill now">today</span>' : ''}${isAnniv(d) ? ' <span class="pill anniv">♥ anniversary</span>' : ''}${HOLIDAYS[d.date] ? ` <span class="pill holiday">🎌 ${esc(HOLIDAYS[d.date][0])}</span>` : ''}</div>
             <div class="headline">${esc(d.headline)}</div>
-            <div class="daymeta">${intensity(d.intensity)}${wxChip(d)}${syncState.journal[d.date]?.mood ? `<span>${syncState.journal[d.date].mood}</span>` : ''}<span>🛏️ ${esc(d.stay?.name || d.overnightText || '—')}</span></div>
+            <div class="daymeta">${intensity(d.intensity)}${wxChip(d)}${syncState.journal[d.date]?.mood ? `<span>${syncState.journal[d.date].mood}</span>` : ''}${syncState.notes[d.date] ? '<span>📝</span>' : ''}<span>🛏️ ${esc(d.stay?.name || d.overnightText || '—')}</span></div>
           </div></a></li>`;
       }).join('')}
     </ol>`;
@@ -315,6 +318,7 @@ function viewDay(r) {
         <span class="e">${c.typeEmoji}</span><span class="a">${esc(c.activity)}</span>
         ${syncState.marks[c.id] === 'done' ? '<span class="tick">済</span>' : ''}</button></li>`).join('')}
     </ol>
+    ${kit.notesBlock(day, syncState)}
     ${overnight(day)}
     ${tripMap(trip, { today: w.phase === 'during' ? w.day : null, focus: day, variant: 'day' })}
     ${w.phase !== 'before' ? kit.journalBlock(day, syncState) : ''}
@@ -619,8 +623,8 @@ function snapshotFields() {
 function restoreFields({ values, focus }) {
   for (const [id, v] of values) {
     const el = document.getElementById(id);
-    // Journal text is shared state: take the other phone's version unless it's the field being typed in.
-    if (el && (!el.dataset.journal || focus?.id === id)) el.value = v;
+    // Journal and note text is shared state: take the other phone's version unless it's the field being typed in.
+    if (el && (!(el.dataset.journal || el.dataset.note) || focus?.id === id)) el.value = v;
   }
   const el = focus && document.getElementById(focus.id);
   if (el) { el.focus({ preventScroll: true }); try { el.setSelectionRange(focus.start, focus.end); } catch {} }
@@ -673,7 +677,7 @@ document.addEventListener('click', e => {
 document.addEventListener('input', e => {
   if (e.target.id !== 'plan-q') return kit.kitInput(e);
   planQuery = e.target.value;
-  document.getElementById('plan-hits').innerHTML = searchPlan(trip, planQuery);
+  document.getElementById('plan-hits').innerHTML = searchPlan(trip, planQuery, syncState.notes);
 });
 document.addEventListener('change', e => kit.kitChange(e, ctx()));
 document.addEventListener('submit', e => { if (app.contains(e.target) && sync) kit.kitSubmit(e, ctx()); });

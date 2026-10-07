@@ -241,6 +241,16 @@ export function viewHowto() {
       <ul>${points.map(p => `<li>${esc(p)}</li>`).join('')}</ul></details>`).join('')}`;
 }
 
+// ----- day notes (on each day view, before, during and after the trip) -----
+
+export function notesBlock(day, state) {
+  const n = state.notes[day.date] || {};
+  return `<section class="daynotes">
+    <h2 class="section">Notes <span class="muted">· shared between both phones</span></h2>
+    <textarea id="nt-${day.date}" class="field" data-note="${day.date}" rows="4" placeholder="Reminders, ideas, things to ask…">${esc(n.text || '')}</textarea>
+  </section>`;
+}
+
 // ----- journal (lives on each day view) -----
 
 const MOODS = ['😫', '😐', '🙂', '😄', '🤩'];
@@ -331,6 +341,12 @@ export function kitInput(e) {
 }
 
 export function kitChange(e, ctx) {
+  const noteDate = e.target.dataset.note;
+  if (noteDate) {
+    const text = e.target.value.trim();
+    if ((ctx.state.notes[noteDate]?.text || '') !== text) ctx.sync.set(`notes/${noteDate}`, text ? { text, at: new Date().toISOString() } : null);
+    return;
+  }
   const date = e.target.dataset.journal;
   if (!date) return;
   const j = ctx.state.journal[date] || {};

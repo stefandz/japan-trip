@@ -4,7 +4,7 @@ import { esc } from './util.js';
 // "Sensoji" finds "Sensō-ji": accents, hyphens and apostrophes don't count.
 const norm = s => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[-'’]/g, '');
 
-export function searchPlan(trip, query) {
+export function searchPlan(trip, query, notes = {}) {
   const terms = norm(query).split(/\s+/).filter(Boolean);
   if (!terms.length || terms.join('').length < 2) return '';
   const hit = (...fields) => { const text = norm(fields.join(' ')); return terms.every(t => text.includes(t)); };
@@ -21,6 +21,8 @@ export function searchPlan(trip, query) {
       ...asides.map(c => cardRow(c, [c.gettingThere, c.notes].filter(f => terms.some(t => norm(f).includes(t))).join('. '))),
       ...days.map(d => row(d.headline, [`Day ${d.day}`, d.label, d.base], '', d.dayNotes, `#/day/${d.day}`)),
     ]],
+    ['Our notes', trip.days.filter(d => hit(notes[d.date]?.text))
+      .map(d => row(`Day ${d.day} · ${d.label}`, [d.base], '', notes[d.date].text, `#/day/${d.day}`))],
     ['Activities list', trip.activities.filter(a => hit(a.activity, a.city, a.category, a.notes))
       .map(a => row(a.activity, [a.city, a.day, a.category], a.status, a.notes))],
     ['Food list', trip.foodPlan.filter(f => hit(f.name, f.city, f.dietary, f.notes))

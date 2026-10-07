@@ -17,7 +17,7 @@ No build step and no dependencies: plain HTML/CSS/ES modules.
 
 The Trip tab opens with a route map: each base city in order, trains between them (listed under the map), day trips like Miyajima and Himeji, and a pulsing dot where you are. A compact copy sits on Now, and each day's view highlights that day's move. It's drawn from a built-in simplified coastline (`js/map-data.js`, Natural Earth, public domain), so it works offline. Map positions for cities and day-trip spots are in `js/content.js`.
 
-Also: each day shows its forecast (Trip list, day header, Now), and the evening before a wet or windy day Now shows a warning. Each day view has a shared journal (mood + a line or two), which appears on the おかえり screen afterwards.
+Also: each day shows its forecast (Trip list, day header, Now), and the evening before a wet or windy day Now shows a warning. Each day view has a shared notes box (reminders and ideas, editable from either phone, flagged 📝 in the Trip list and included in the plan search) and a shared journal (mood + a line or two), which appears on the おかえり screen afterwards.
 
 ### Where things come from
 
@@ -30,7 +30,7 @@ Also: each day shows its forecast (Trip list, day header, Now), and the evening 
 | Plan search | Sheet: Itinerary, plus the optional **Activities** and **Food** tabs | The two extra tabs are only read for search, so it can say "idea" or "dropped" rather than "not found". |
 | Gifts | Sheet: optional **Gifts** tab (For, Gift, Where to look, Budget, Status, Notes) | Ticks sync between phones. "Bought" in Status also ticks one off. |
 | Insurance, medical notes, contacts | `EMERGENCY` in `secrets.json` (encrypted) | Personal. Kept out of the link-shared Sheet. |
-| Spend, food ticks & additions, journal | Shared state (Firebase, or this phone) | Added on the go, from either phone. |
+| Spend, food ticks & additions, day notes, journal | Shared state (Firebase, or this phone) | Added on the go, from either phone. |
 | Exchange rate, weather | frankfurter.dev, open-meteo.com (no keys) | Cached. Offline shows the last copy. |
 
 ### Offline
