@@ -7,7 +7,7 @@ import { earlyStart, icsHref } from './ics.js';
 import { unlock } from './unlock.js';
 import { esc, progress, shortDate, inkAnim } from './util.js';
 import { refreshRate, refreshWeather, weather, wxEmoji } from './live.js';
-import { cityFor, HOLIDAYS } from './content.js';
+import { cityFor, HOLIDAYS, URGENT_PHRASE } from './content.js';
 import * as kit from './kit.js';
 import { tripMap } from './map.js';
 
@@ -186,6 +186,7 @@ function viewNow() {
     </header>
     <nav class="quick">
       <a class="chip" href="#/taxi">🚕 Taxi card</a><a class="chip" href="#/phrases">🗣️ Phrases</a>
+      <button class="chip" data-action="show-phrase" data-i="${URGENT_PHRASE}">🚻 Toilet</button>
       <a class="chip" href="#/yen">💴 Yen</a><a class="chip" href="#/spend">🧾 Spend</a><a class="chip" href="#/sos">🆘 SOS</a>
     </nav>
     ${holidayBanner(day)}
@@ -239,7 +240,7 @@ function viewAfter() {
     <div class="stats">
       <div><b>${trip.days.length}</b><span>days</span></div>
       <div><b>${done}</b><span>things done</span></div>
-      <div><b>${stamps}</b><span>eki stamps</span></div>
+      <div><b>${stamps}</b><span>stamps</span></div>
       <div><b>${trip.legs.length}</b><span>trains &amp; flights</span></div>
     </div>
     ${journalList()}
@@ -432,22 +433,29 @@ function decision(d) {
 // ----- Stamps -----
 
 function viewStamps() {
+  const w = whereAreWe();
   const got = trip.stamps.filter(stampGot).length;
+  const kinds = [...new Set(trip.stamps.map(s => s.kind))];
   return `
-    <header class="page"><h1>Eki stamps</h1>
-      <p class="muted">${got} of ${trip.stamps.length} collected</p>${progress(got, trip.stamps.length)}</header>
-    <div class="stampbook">
-      ${trip.stamps.map(s => {
-        const have = stampGot(s);
-        return `<button class="stamp ${have ? 'got' : ''} ${s.confirmed ? '' : 'maybe'}" data-action="stamp" data-id="${s.id}">
-          <div class="ink"${have ? inkAnim(syncState.stamps[s.id]) : ''}><span>${esc(initials(s.station))}</span><small>${esc(s.station)}</small></div>
-          <div class="info"><b>${esc(s.station)}</b>
-            <div class="muted">${esc(s.day)}</div>
-            <p>${esc(s.design)}</p>
-            <p class="where">🔎 ${esc(s.where)}</p></div>
-        </button>`;
-      }).join('')}
-    </div>`;
+    <header class="page"><h1>Stamps</h1>
+      <p class="muted">${got} of ${trip.stamps.length} collected · faded ones aren't confirmed, so ask</p>${progress(got, trip.stamps.length)}</header>
+    ${kinds.map(kind => {
+      const list = trip.stamps.filter(s => s.kind === kind);
+      return `<h2 class="section">${esc(kind)} <span class="muted">· ${list.filter(stampGot).length} of ${list.length}</span></h2>
+        <div class="stampbook">${list.map(s => stampRow(s, w)).join('')}</div>`;
+    }).join('')}`;
+}
+
+function stampRow(s, w) {
+  const have = stampGot(s);
+  const today = w.phase === 'during' && s.days.includes(w.day.day);
+  return `<button class="stamp ${have ? 'got' : ''} ${s.confirmed ? '' : 'maybe'}" data-action="stamp" data-id="${s.id}">
+    <div class="ink"${have ? inkAnim(syncState.stamps[s.id]) : ''}><span>${esc(initials(s.station))}</span><small>${esc(s.station)}</small></div>
+    <div class="info"><b>${esc(s.station)}</b>${today ? ' <span class="pill now">today</span>' : ''}
+      <div class="muted">${esc([s.day, s.line].filter(Boolean).join(' · '))}</div>
+      <p>${esc(s.design)}</p>
+      <p class="where">🔎 ${esc(s.where)}</p></div>
+  </button>`;
 }
 
 const stampGot = s => s.sheetCollected || !!syncState.stamps[s.id];

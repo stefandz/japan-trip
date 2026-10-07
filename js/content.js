@@ -21,6 +21,21 @@ export const PHRASES = [
   ['Basics', 'Could you take a photo of us?', '写真を撮っていただけますか？', 'shashin o totte itadakemasu ka?'],
   ['Basics', 'Goodbye', 'さようなら', 'sayōnara'],
 
+  ['Toilet (urgent)', 'Where is the nearest toilet? It\'s urgent.', '一番近いトイレはどこですか？急いでいます。', 'ichiban chikai toire wa doko desu ka? isoide imasu.'],
+  ['Toilet (urgent)', 'May I use your toilet, please? (shop, konbini, café)', 'すみません、トイレをお借りしてもいいですか？', 'sumimasen, toire o okari shitemo ii desu ka?'],
+  ['Toilet (urgent)', 'Card to show: I have a medical condition and need a toilet urgently. Please may I use yours?', '持病のため、急にトイレが必要になることがあります。トイレを使わせていただけませんか？', 'jibyō no tame, kyū ni toire ga hitsuyō ni naru koto ga arimasu. toire o tsukawasete itadakemasen ka?'],
+  ["Toilet (urgent)", "I can't wait. May I go ahead of you? (queue)", 'すみません、我慢できません。先に入らせてもらえますか？', 'sumimasen, gaman dekimasen. saki ni hairasete moraemasu ka?'],
+  ['Toilet (urgent)', 'I have irritable bowel syndrome (IBS)', '過敏性腸症候群（IBS）です', 'kabinsei chō shōkōgun desu'],
+  ["Toilet (urgent)", "It's a bowel condition. It isn't infectious.", '腸の病気です。うつる病気ではありません。', 'chō no byōki desu. utsuru byōki dewa arimasen.'],
+  ['Toilet (urgent)', 'Is there a toilet near here?', 'この近くにトイレはありますか？', 'kono chikaku ni toire wa arimasu ka?'],
+  ['Toilet (urgent)', 'Is there a toilet inside the ticket gates?', '改札の中にトイレはありますか？', 'kaisatsu no naka ni toire wa arimasu ka?'],
+  ['Toilet (urgent)', 'Is there a toilet on this train?', 'この電車にトイレはありますか？', 'kono densha ni toire wa arimasu ka?'],
+  ['Toilet (urgent)', 'Taxi: I need a toilet. Please stop at the nearest konbini.', 'トイレに行きたいので、一番近いコンビニで止めてください', 'toire ni ikitai node, ichiban chikai konbini de tomete kudasai'],
+  ["Toilet (urgent)", "Excuse me, I'm just going to the toilet (leaving the table)", 'すみません、ちょっとお手洗いに行ってきます', 'sumimasen, chotto otearai ni itte kimasu'],
+  ['Toilet (urgent)', 'I have an upset stomach', 'お腹を壊しています', 'onaka o kowashite imasu'],
+  ['Toilet (urgent)', 'There is no toilet paper', 'トイレットペーパーがありません', 'toiretto pēpā ga arimasen'],
+  ['Toilet (urgent)', 'Pharmacy: do you have anti-diarrhoea medicine?', '下痢止めはありますか？', 'geridome wa arimasu ka?'],
+
   ['Food', 'Table for two, please', '二人です', 'futari desu'],
   ['Food', 'Do you have an English menu?', '英語のメニューはありますか？', 'eigo no menyū wa arimasu ka?'],
   ['Food', 'The menu, please', 'メニューをお願いします', 'menyū o onegai shimasu'],
@@ -110,6 +125,9 @@ export const PHRASES = [
   ["Help", "I've lost my passport", 'パスポートをなくしました', 'pasupōto o nakushimashita'],
 ];
 
+// The one to show when there's no time to scroll: Now has a button straight to it.
+export const URGENT_PHRASE = PHRASES.findIndex(p => p[1].startsWith('Card to show'));
+
 // General numbers. Personal ones (insurance, medical) come from the encrypted secrets.
 export const SOS_NUMBERS = [
   { label: 'Ambulance / fire', tel: '119', note: 'Say 救急です (kyūkyū desu) for ambulance' },
@@ -192,6 +210,14 @@ export const HOWTO = [
     'Restaurants may think a little dashi or a few bonito flakes are OK. Show “Not even a small amount” as well.',
     'Look for ヴィーガン (vegan), 植物性 (plant-based) or the Vegan / Vegetarian filters in Google Maps and HappyCow.',
     'Konbini: plain or umeboshi onigiri, edamame, roasted sweet potato and nuts are usually safe. Check the label for 乳 (milk) and 卵 (egg).',
+  ]],
+  ['🚻', 'Finding a toilet fast', [
+    'Konbini (7-Eleven, Lawson, FamilyMart) nearly all have a free toilet. Ask first with the “May I use your toilet” phrase. A few in the busiest city centres say no.',
+    'Stations have them, but usually inside the ticket gates. Department stores and shopping malls have clean ones on most floors, and parks and big temples have public ones.',
+    'Shinkansen and limited expresses have toilets, in every other car or so. Subways and most local trains have none, so go before you board.',
+    'トイレ and お手洗い both mean toilet. 多目的トイレ or だれでもトイレ is the big accessible one, which anyone who needs it may use.',
+    'On the door: 空き vacant · 使用中 occupied. On the panel: 流す flush (大 big, 小 small) · 止 stop · おしり rear spray · 音姫 flushing sound for privacy.',
+    'A few public toilets have no paper or soap. Carry tissues and hand gel.',
   ]],
   ['🧾', 'Tax-free shopping', [
     'Spend ¥5,000 or more before tax in one shop on one day.',

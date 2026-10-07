@@ -252,7 +252,7 @@ h2.section .muted { text-transform: none; letter-spacing: 0; font-weight: 500; }
 .intensity .dim { filter: grayscale(1); opacity: .25; }
 
 /* ---------- stamps ---------- */
-.stampbook { display: grid; gap: 12px; margin-top: 16px; }
+.stampbook { display: grid; gap: 12px; }
 .stamp {
   display: flex; gap: 14px; text-align: left; padding: 14px; border-radius: var(--radius);
   background: var(--paper); border: 1px solid var(--line); box-shadow: var(--shadow);

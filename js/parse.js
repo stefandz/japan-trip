@@ -10,7 +10,7 @@ const COLS = {
     nameJa: 'Name (JP)', addressJa: 'Address (JP)', phone: 'Phone' },
   Travel: { leg: 'Leg', date: 'Date', mode: 'Mode', number: 'Flight/Train No.', departs: 'Sched. departure', arrives: 'Sched. arrival', status: 'Status', confirmation: 'Confirmation code', notes: 'Notes',
     collection: 'Collection code', qr: 'QR' },
-  'Eki Stamps': { station: 'Station', line: 'Line / operator', day: 'Day', design: 'Design / highlight', where: 'Where to find it', status: 'Status' },
+  'Eki Stamps': { station: 'Station', line: 'Line / operator', day: 'Day', design: 'Design / highlight', where: 'Where to find it', status: 'Status', kind: 'Type' },
   Countdown: { due: 'Due date', task: 'Task', category: 'Category', status: 'Status', notes: 'Notes' },
   'Open Decisions': { topic: 'Topic', question: 'Open question', options: 'Options', leaning: 'Leaning' },
   Gifts: { for: 'For', gift: 'Gift', where: 'Where to look', budget: 'Budget', status: 'Status', notes: 'Notes' },
@@ -18,8 +18,8 @@ const COLS = {
 
 // Optional tabs: the app still works if these are missing.
 const OPTIONAL = new Set(['Overview', 'Countdown', 'Open Decisions', 'Eki Stamps', 'Gifts']);
-// Optional columns: extras for the taxi card and the ticket. Blank when absent, never an error.
-const OPTIONAL_COLS = new Set(['nameJa', 'addressJa', 'phone', 'collection', 'qr']);
+// Optional columns: extras for the taxi card, the ticket and the stamp groups. Blank when absent, never an error.
+const OPTIONAL_COLS = new Set(['nameJa', 'addressJa', 'phone', 'collection', 'qr', 'kind']);
 
 const SLOT_DEFAULT_MIN = { morning: 8 * 60, afternoon: 13 * 60, evening: 18 * 60, night: 21 * 60 };
 const MONTHS = { jan: 1, feb: 2, mar: 3, apr: 4, may: 5, jun: 6, jul: 7, aug: 8, sep: 9, oct: 10, nov: 11, dec: 12 };
@@ -29,7 +29,14 @@ export function parseTrip(tabs) {
   const legs = read('Travel').map(parseLeg).filter(l => l.date);
   const stays = read('Accommodation').filter(r => r.checkIn).map(r => ({ ...r, nights: Number(r.nights) || null }));
   const overview = new Map(read('Overview').map(r => [toISO(r.date), r]));
-  const decisions = read('Open Decisions').filter(r => r.topic).map(parseDecision);
+  // A Leaning that starts "Resolved" or "Superseded" closes the decision in the Sheet itself.
+  const decisions = read('Open Decisions').filter(r => r.topic && !/^(resolved|superseded)/i.test(r.leaning)).map(parseDecision);
+  // A booked night nobody sleeps in (still in the air, say) gives way to what Overview says for that night.
+  const stayOn = date => {
+    const stay = stays.find(s => s.checkIn <= date && date < s.checkOut);
+    const where = overview.get(date)?.overnight;
+    return stay && (!where || where.includes(stay.city)) ? stay : null;
+  };
 
   const cards = [];
   const seenIds = new Map();
@@ -44,7 +51,7 @@ export function parseTrip(tabs) {
   attachLegs(cards, legs);
 
   const dates = [...new Set([...cards.map(c => c.date), ...overview.keys()])].filter(Boolean).sort();
-  const days = dates.map(date => {
+  const days = dates.map((date, i) => {
     const ov = overview.get(date) || {};
     const dayCards = cards.filter(c => c.date === date);
     const dayNum = ov.day !== undefined && ov.day !== '' ? Number(ov.day) : dayCards[0]?.day;
@@ -55,8 +62,8 @@ export function parseTrip(tabs) {
       base: ov.base || '', overnightText: ov.overnight || '', headline: ov.headline || '',
       intensity: Number(ov.intensity) || null, dayNotes: ov.notes || '',
       cards: dayCards,
-      stay: stays.find(s => s.checkIn <= date && date < s.checkOut) || null,
-      checkIn: stays.find(s => s.checkIn === date) || null,
+      stay: stayOn(date),
+      checkIn: stayOn(date) !== (i ? stayOn(dates[i - 1]) : null) ? stayOn(date) : null,
       checkOut: stays.find(s => s.checkOut === date) || null,
       decisions: decisions.filter(d => d.date === date || (d.day !== null && d.day === dayNum)),
     };
@@ -64,9 +71,11 @@ export function parseTrip(tabs) {
 
   return {
     days, cards, legs, stays, decisions,
-    stamps: read('Eki Stamps').filter(r => r.station).map(r => ({
+    // Footnotes under the table only fill the first column, so a real row needs more than a name.
+    stamps: read('Eki Stamps').filter(r => r.station && (r.line || r.where)).map(r => ({
       ...r, id: hash(r.station), sheetCollected: /got|done|yes|✅|collected/i.test(r.status || ''),
       confirmed: /^confirmed/i.test(r.design || ''),
+      kind: r.kind || 'Eki stamps', days: dayNumbers(r.day),
     })),
     countdown: read('Countdown').filter(r => r.task).map(r => ({
       ...r, dueISO: toISO(r.due), done: /done|✅|complete/i.test(r.status || ''),
@@ -180,6 +189,15 @@ function parseDecision(r) {
     date: dateMatch ? `${CONFIG.TRIP_YEAR}-${String(MONTHS[dateMatch[2].toLowerCase()]).padStart(2, '0')}-${dateMatch[1].padStart(2, '0')}` : null,
     day: dayMatch ? Number(dayMatch[1]) : null,
   };
+}
+
+// "Days 3-5, 13 (if time)" → [3, 4, 5, 13]
+function dayNumbers(s) {
+  const out = [];
+  for (const m of s.split('(')[0].matchAll(/(\d+)(?:\s*[-–]\s*(\d+))?/g)) {
+    for (let d = Number(m[1]); d <= Number(m[2] || m[1]); d++) out.push(d);
+  }
+  return out;
 }
 
 // "Wed 7 Oct" or "2026-10-07" → "2026-10-07"

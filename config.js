@@ -14,8 +14,8 @@ export const CONFIG = {
   TRIP_END: '2026-10-21',
 
   // "Now" is always computed in these zones, regardless of the phone's own setting.
-  // Day 0 happens in London; everything after is in Japan.
-  TIMEZONE_BY_DAY: { 0: 'Europe/London' },
+  // Days 0 and 1 happen in London (the flight left a day late); everything after is in Japan.
+  TIMEZONE_BY_DAY: { 0: 'Europe/London', 1: 'Europe/London' },
   DEFAULT_TIMEZONE: 'Asia/Tokyo',
 
   // A day counts as an "early start" if its first timed card is before this.

@@ -11,9 +11,9 @@ No build step and no dependencies: plain HTML/CSS/ES modules.
 | ⏱ **Now** | Before the trip: countdown + remaining prep. During: the current card, what's next (with "in 40m"), tonight's hotel, and a heads-up the evening before an early start. After: おかえり stats. |
 | 🗾 **Trip** | All days: base, headline, intensity 🔥, where you're sleeping. |
 | Day view | Day strip (sticky), swipeable card deck, a timeline to jump around, the overnight banner, and open decisions for that day. ⏱ Now button to jump back. |
-| 🔴 **Stamps** | Eki stamp book. Tap to collect. |
+| 🔴 **Stamps** | Stamp book, grouped by the Sheet's **Type** column (eki stamps, attraction stamps, goshuin). Tap to collect. Ones for today's day get a flag; unconfirmed ones are faded. |
 | 🎒 **Prep** | Countdown tasks with live days-left, open decisions (tap to resolve), stays, and sync/data status. |
-| 🧰 **Kit** | 🗣️ Phrases (search in English, tap for full screen; includes vegan / no-dairy ones), 💴 Yen converter + reference table, 🚕 Taxi card (hotel in Japanese, full screen), 🆘 SOS numbers + your insurance/medical notes, 🧾 Spend log (shared, ¥ and £), 🍡 Food list (shared, add your own), 🎁 Gifts (ideas from the Sheet, tick off as you buy), 📖 How-to cards. 🎌 National holidays flagged on the day list, day view and Now. |
+| 🧰 **Kit** | 🗣️ Phrases (search in English, tap for full screen; includes vegan / no-dairy ones and urgent-toilet ones, with a 🚻 button on Now that opens the card to show), 💴 Yen converter + reference table, 🚕 Taxi card (hotel in Japanese, full screen), 🆘 SOS numbers + your insurance/medical notes, 🧾 Spend log (shared, ¥ and £), 🍡 Food list (shared, add your own), 🎁 Gifts (ideas from the Sheet, tick off as you buy), 📖 How-to cards. 🎌 National holidays flagged on the day list, day view and Now. |
 
 The Trip tab opens with a route map: each base city in order, trains between them (listed under the map), day trips like Miyajima and Himeji, and a pulsing dot where you are. A compact copy sits on Now, and each day's view highlights that day's move. It's drawn from a built-in simplified coastline (`js/map-data.js`, Natural Earth, public domain), so it works offline. Map positions for cities and day-trip spots are in `js/content.js`.
 
@@ -26,6 +26,7 @@ Also: each day shows its forecast (Trip list, day header, Now), and the evening 
 | Phrases, how-to, SOS numbers, food starter list, national holidays | Built in (`js/content.js`) | The Japanese needs to be right, and it has to work with no data at all. |
 | Taxi card | Sheet: optional **Name (JP)**, **Address (JP)**, **Phone** columns on Accommodation | Copy them from each booking confirmation. Without them the card shows the English name + a map link. |
 | Ticket QR + collection code | Sheet: optional **Collection code** and **QR** columns on Travel | QR is an image placed in the cell, or a Google Drive link to one (several links for several tickets). Needs the Apps Script route. |
+| Stamp groups | Sheet: optional **Type** column on Eki Stamps | Each distinct value becomes a section, in the order it first appears. Blank counts as "Eki stamps". A Design that starts "Confirmed" shows solid; anything else is faded. |
 | Gifts | Sheet: optional **Gifts** tab (For, Gift, Where to look, Budget, Status, Notes) | Ticks sync between phones. "Bought" in Status also ticks one off. |
 | Insurance, medical notes, contacts | `EMERGENCY` in `secrets.json` (encrypted) | Personal. Kept out of the link-shared Sheet. |
 | Spend, food ticks & additions, journal | Shared state (Firebase, or this phone) | Added on the go, from either phone. |
@@ -91,11 +92,13 @@ Any static host works. GitHub Pages: push this folder and enable Pages. It must 
 
 ## Things worth knowing
 
-- **Time zone:** "now" is always computed in JST (Day 0 in London time), whatever the phone is set to. See `TIMEZONE_BY_DAY` in `config.js`.
+- **Time zone:** "now" is always computed in JST (Days 0 and 1 in London time, since the flight left a day late), whatever the phone is set to. See `TIMEZONE_BY_DAY` in `config.js`.
 - **Column headers matter.** The parser finds columns by header text (`COLS` in `js/parse.js`). Reordering is fine. If you rename a header, update `COLS`; the app will show which header it couldn't find.
 - **Marks are keyed on date + activity text.** Renaming an activity in the Sheet orphans its done/skip mark. Moving it or editing its time doesn't.
 - **Untimed cards** are placed using their slot (morning 08:00, afternoon 13:00, evening 18:00) and never before the card above them.
 - **Early starts:** any day whose first timed card is before 07:00 gets a wake-by banner and a `+ Alarm` .ics download (the alarm goes off 45 min before). iOS doesn't let web pages set Clock alarms.
 - **Citymapper** only shows in Tokyo/Kyoto/Osaka. Its web link takes an address, not coordinates. Tap-test it once before relying on it.
 - Stamps marked "Got it"/"Done" in the Sheet's Status column count as collected too.
+- **Unused nights:** if Overview's "Overnight in" for a date doesn't name the booked stay's city (e.g. "In transit"), that night shows the Overview text and check-in moves to the first night actually slept there.
+- **Closed decisions:** an Open Decisions row whose Leaning starts "Resolved" or "Superseded" is hidden.
 - Offline: the app shell is cached by the service worker, and the last good copy of the Sheet is kept in localStorage. If the fetch fails, a banner says how old the data is.
