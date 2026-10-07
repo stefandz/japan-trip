@@ -1,7 +1,7 @@
 // Fetches the raw tabs from the Google Sheet as { tabName: string[][] }.
 import { CONFIG } from '../config.js';
 
-export const TABS = ['Overview', 'Itinerary', 'Accommodation', 'Travel', 'Eki Stamps', 'Countdown', 'Open Decisions', 'Gifts'];
+export const TABS = ['Overview', 'Itinerary', 'Accommodation', 'Travel', 'Eki Stamps', 'Countdown', 'Open Decisions', 'Gifts', 'Activities', 'Food'];
 
 const CACHE_KEY = 'jt.sheetCache.v1';
 

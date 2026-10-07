@@ -1,10 +1,10 @@
 // Offline shell: cache-first for app files, network for everything else.
 // Plan data is cached separately in localStorage by the app itself.
-const VERSION = 'jt-v16';
+const VERSION = 'jt-v17';
 const SHELL = [
   './', 'index.html', 'styles.css', 'config.js', 'secrets.enc.js', 'manifest.webmanifest',
   'js/app.js', 'js/sheet.js', 'js/parse.js', 'js/sync.js', 'js/time.js', 'js/ics.js', 'js/unlock.js',
-  'js/util.js', 'js/content.js', 'js/live.js', 'js/kit.js', 'js/map.js', 'js/map-data.js',
+  'js/util.js', 'js/content.js', 'js/live.js', 'js/kit.js', 'js/map.js', 'js/map-data.js', 'js/search.js',
   'icons/icon.svg', 'icons/icon-192.png', 'icons/apple-touch-icon.png',
 ];
 

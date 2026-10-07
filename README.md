@@ -9,8 +9,8 @@ No build step and no dependencies: plain HTML/CSS/ES modules.
 | Tab | What |
 |---|---|
 | ⏱ **Now** | Before the trip: countdown + remaining prep. During: the current card, what's next (with "in 40m"), tonight's hotel, and a heads-up the evening before an early start. After: おかえり stats. |
-| 🗾 **Trip** | All days: base, headline, intensity 🔥, where you're sleeping. |
-| Day view | Day strip (sticky), swipeable card deck, a timeline to jump around, the overnight banner, and open decisions for that day. ⏱ Now button to jump back. |
+| 🗾 **Trip** | All days: base, headline, intensity 🔥, where you're sleeping. A search box at the top answers "is it in the plan?": itinerary items first, then passing mentions, then the Activities and Food lists (with their Planned / Idea / Dropped status), stays, stamps, gifts and prep. |
+| Day view | Day strip (sticky, showing weekday and date), swipeable card deck, a timeline to jump around, the overnight banner, and open decisions for that day. ⏱ Now button to jump back. |
 | 🔴 **Stamps** | Stamp book, grouped by the Sheet's **Type** column (eki stamps, attraction stamps, goshuin). Tap to collect. Ones for today's day get a flag; unconfirmed ones are faded. |
 | 🎒 **Prep** | Countdown tasks with live days-left, open decisions (tap to resolve), stays, and sync/data status. |
 | 🧰 **Kit** | 🗣️ Phrases (search in English, tap for full screen; includes vegan / no-dairy ones and urgent-toilet ones, with a 🚻 button on Now that opens the card to show), 💴 Yen converter + reference table, 🚕 Taxi card (hotel in Japanese, full screen), 🆘 SOS numbers + your insurance/medical notes, 🧾 Spend log (shared, ¥ and £), 🍡 Food list (shared, add your own), 🎁 Gifts (ideas from the Sheet, tick off as you buy), 📖 How-to cards. 🎌 National holidays flagged on the day list, day view and Now. |
@@ -27,6 +27,7 @@ Also: each day shows its forecast (Trip list, day header, Now), and the evening 
 | Taxi card | Sheet: optional **Name (JP)**, **Address (JP)**, **Phone** columns on Accommodation | Copy them from each booking confirmation. Without them the card shows the English name + a map link. |
 | Ticket QR + collection code | Sheet: optional **Collection code** and **QR** columns on Travel | QR is an image placed in the cell, or a Google Drive link to one (several links for several tickets). Needs the Apps Script route. |
 | Stamp groups | Sheet: optional **Type** column on Eki Stamps | Each distinct value becomes a section, in the order it first appears. Blank counts as "Eki stamps". A Design that starts "Confirmed" shows solid; anything else is faded. |
+| Plan search | Sheet: Itinerary, plus the optional **Activities** and **Food** tabs | The two extra tabs are only read for search, so it can say "idea" or "dropped" rather than "not found". |
 | Gifts | Sheet: optional **Gifts** tab (For, Gift, Where to look, Budget, Status, Notes) | Ticks sync between phones. "Bought" in Status also ticks one off. |
 | Insurance, medical notes, contacts | `EMERGENCY` in `secrets.json` (encrypted) | Personal. Kept out of the link-shared Sheet. |
 | Spend, food ticks & additions, journal | Shared state (Firebase, or this phone) | Added on the go, from either phone. |

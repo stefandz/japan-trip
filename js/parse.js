@@ -13,11 +13,13 @@ const COLS = {
   'Eki Stamps': { station: 'Station', line: 'Line / operator', day: 'Day', design: 'Design / highlight', where: 'Where to find it', status: 'Status', kind: 'Type' },
   Countdown: { due: 'Due date', task: 'Task', category: 'Category', status: 'Status', notes: 'Notes' },
   'Open Decisions': { topic: 'Topic', question: 'Open question', options: 'Options', leaning: 'Leaning' },
+  Activities: { activity: 'Activity', city: 'City', day: 'Suggested day', category: 'Category', status: 'Status', notes: 'Notes / options' },
+  Food: { name: 'Restaurant / experience', city: 'City', day: 'Suggested day', status: 'Status', dietary: 'Dietary notes', notes: 'Notes' },
   Gifts: { for: 'For', gift: 'Gift', where: 'Where to look', budget: 'Budget', status: 'Status', notes: 'Notes' },
 };
 
 // Optional tabs: the app still works if these are missing.
-const OPTIONAL = new Set(['Overview', 'Countdown', 'Open Decisions', 'Eki Stamps', 'Gifts']);
+const OPTIONAL = new Set(['Overview', 'Countdown', 'Open Decisions', 'Eki Stamps', 'Gifts', 'Activities', 'Food']);
 // Optional columns: extras for the taxi card, the ticket and the stamp groups. Blank when absent, never an error.
 const OPTIONAL_COLS = new Set(['nameJa', 'addressJa', 'phone', 'collection', 'qr', 'kind']);
 
@@ -83,6 +85,9 @@ export function parseTrip(tabs) {
     countdown: read('Countdown').filter(r => r.task).map(r => ({
       ...r, dueISO: toISO(r.due), done: /done|✅|complete/i.test(r.status || ''),
     })),
+    // The wider candidate lists: only used by the plan search, to say "idea" or "dropped" rather than "not found".
+    activities: read('Activities').filter(r => r.activity && (r.city || r.status)),
+    foodPlan: read('Food').filter(r => r.name && (r.city || r.status)),
     gifts: read('Gifts').filter(r => r.gift).map(r => ({
       ...r, id: hash(`${r.for}|${r.gift}`), sheetBought: /bought|got|done|yes|✅/i.test(r.status || ''),
     })),

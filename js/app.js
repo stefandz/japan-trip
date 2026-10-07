@@ -10,6 +10,7 @@ import { refreshRate, refreshWeather, weather, wxEmoji } from './live.js';
 import { cityFor, HOLIDAYS, URGENT_PHRASE } from './content.js';
 import * as kit from './kit.js';
 import { tripMap } from './map.js';
+import { searchPlan } from './search.js';
 
 const app = document.getElementById('app');
 const nav = document.getElementById('tabs');
@@ -259,10 +260,14 @@ function journalList() {
 
 // ----- Trip overview -----
 
+let planQuery = '';
+
 function viewDays() {
   const w = whereAreWe();
   return `
     <header class="page"><h1>The trip</h1><p class="muted">${trip.days.length} days · tap one to dive in</p></header>
+    <input id="plan-q" class="field" type="search" placeholder="Is it in the plan? e.g. Nara, sumo, onsen" value="${esc(planQuery)}" autocomplete="off">
+    <div id="plan-hits">${searchPlan(trip, planQuery)}</div>
     ${tripMap(trip, { today: w.phase === 'during' ? w.day : null })}
     <ol class="daylist">
       ${trip.days.map(d => {
@@ -321,8 +326,8 @@ function dayStrip(active, w) {
   return `<nav class="strip" id="strip">${trip.days.map(d => {
     const today = w.phase === 'during' && w.day === d;
     const complete = d.cards.length && d.cards.every(c => syncState.marks[c.id]);
-    return `<a href="#/day/${d.day}" class="${d === active ? 'on' : ''} ${today ? 'today' : ''} ${complete ? 'complete' : ''} ${isAnniv(d) ? 'anniv' : ''} ${HOLIDAYS[d.date] ? 'holiday' : ''}">
-      <small>${esc(d.label.split(' ')[0] || '')}</small><b>${d.day}</b></a>`;
+    return `<a href="#/day/${d.day}" aria-label="Day ${d.day}, ${esc(d.label)}" class="${d === active ? 'on' : ''} ${today ? 'today' : ''} ${complete ? 'complete' : ''} ${isAnniv(d) ? 'anniv' : ''} ${HOLIDAYS[d.date] ? 'holiday' : ''}">
+      <small>${esc(d.label.split(' ')[0] || '')}</small><b>${Number(d.date.slice(8))}</b></a>`;
   }).join('')}</nav>`;
 }
 
@@ -665,7 +670,11 @@ document.addEventListener('click', e => {
   }
 });
 
-document.addEventListener('input', kit.kitInput);
+document.addEventListener('input', e => {
+  if (e.target.id !== 'plan-q') return kit.kitInput(e);
+  planQuery = e.target.value;
+  document.getElementById('plan-hits').innerHTML = searchPlan(trip, planQuery);
+});
 document.addEventListener('change', e => kit.kitChange(e, ctx()));
 document.addEventListener('submit', e => { if (app.contains(e.target) && sync) kit.kitSubmit(e, ctx()); });
 
